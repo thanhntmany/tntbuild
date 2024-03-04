@@ -2,6 +2,6 @@
 SCRIPT_DIR=${BASH_SOURCE[0]}
 cd "$SCRIPT_DIR"
 file="tntbuild"
-out_put_file=./build/$file
+output_file=$(readlink -f "./build/${file}")
 
-cc -o $out_put_file ./src/$file.c
+cc -o $output_file ./src/main.c
