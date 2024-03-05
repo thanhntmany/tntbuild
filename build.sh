@@ -1,7 +1,12 @@
 #!/bin/bash
-SCRIPT_DIR=${BASH_SOURCE[0]}
-cd "$SCRIPT_DIR"
-file="tntbuild"
-output_file=$(readlink -f "./build/${file}")
 
-cc -o $output_file ./src/main.c
+
+SCRIPT_DIR=$(pwd)
+SRC_DIR=$SCRIPT_DIR/src
+DST_DIR=$SCRIPT_DIR/dst
+
+output_file=$(readlink -f $DST_DIR/tnt)
+
+pushd $SRC_DIR > /dev/null 2>&1
+cc -o $output_file main.c app.c
+popd > /dev/null 2>&1
