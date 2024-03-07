@@ -35,15 +35,6 @@ char *tnt_getcwd()
 
 
 
-
-
-
-
-
-
-
-
-
 int tnt_app_main_cmd(TntApp app, int argc, char **argv)
 {
 

@@ -6,10 +6,6 @@ typedef struct
     char *cwd;
 } TntApp;
 
-void tnt_app_exit_error(char *strerror);
-char *tnt_getcwd();
-int tnt_app_main_cmd(TntApp app, int argc, char **argv);
-
 #define CMD_LONGOTP_WORKINGDIRECTORY "working-directory="
 #define CMD_LONGOTP_WORKINGDIRECTORY_LEN sizeof(CMD_LONGOTP_WORKINGDIRECTORY) - 1
 
@@ -20,5 +16,10 @@ int tnt_app_main_cmd(TntApp app, int argc, char **argv);
 #define CMD_STAT "CMD_STAT"
 #define CMD_GRAPH "CMD_GRAPH"
 #define CMD_MAKE "CMD_MAKE"
+
+
+void tnt_app_exit_error(char *strerror);
+char *tnt_getcwd();
+int tnt_app_main_cmd(TntApp app, int argc, char **argv);
 
 #endif
