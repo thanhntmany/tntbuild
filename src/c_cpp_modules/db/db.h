@@ -10,6 +10,7 @@ typedef struct
     char **dependencies;
     char *build_script;
     char **companions;
+    char *src_definition;
     time_t utime; // last update time
     bool exists;
 } TntTrackedFile;
