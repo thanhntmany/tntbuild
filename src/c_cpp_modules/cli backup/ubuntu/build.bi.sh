@@ -11,5 +11,5 @@ gcc -o "$target" ./cli/cli.c
 popd > /dev/null 2>&1
 
 echo "========================"
-$target -v ádá tar
+$target -v ádá
 echo "========================"
