@@ -1,15 +1,6 @@
 #!/bin/bash
-#TODO:
-run_build_script () {
-    echo Hello I am a function $1
-}
 
-
-target=$(realpath ./build/cli)
+target=$(realpath ./$build/cli)
 pushd ../../ > /dev/null 2>&1
-gcc -o "$target" ./cli/cli.c
+gcc -o "$target" -I. ./cli/cli.c app/app.c
 popd > /dev/null 2>&1
-
-echo "========================"
-$target -v ádá tar
-echo "========================"

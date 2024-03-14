@@ -6,7 +6,7 @@ typedef struct
     char *cwd;
 } TntApp;
 
-void app_select_target(TntApp app);
+void app_select_dst(TntApp app);
 void app_dep_add(TntApp app);
 void app_dep_rm(TntApp app);
 void app_rel_add(TntApp app);

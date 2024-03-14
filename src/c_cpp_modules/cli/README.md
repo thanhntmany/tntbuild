@@ -11,15 +11,22 @@ Usage:
 tnt <Command>
 
 Command:
-    tar <path>
-    dep [<path>...] [--]  ||  dep+ [<path>...] [--]  ||  dep- [<path>...] [--]  ||  dep-all
-    rel [<path>...] [--]  ||  rel+ [<path>...] [--]  ||  rel- [<path>...] [--]  ||  rel-all
+    require-version <version>
+    dst <path>
+    dep [<path>...] [--]  ||  de- [<path>...] [--]  ||  de-all
+    rel [<path>...] [--]  ||  re- [<path>...] [--]  ||  re-all
     build-script <script>
     onchange-script <script>
 
+    track-branch
+    scan [<path>...] [--]
+    build [<path>...] [--]
+    mark-changed [<path>...] [--]
+
     cd <path>
+    pwd
     status
-    @  ||  @tar  ||  @dep  || @rel  || @build-script  ||  @onchange-script
+    @  ||  @dst  ||  @dep  || @rel  || @build-script  ||  @onchange-script
     load
     clear
     graph
@@ -30,16 +37,16 @@ Command:
 aaaaa
 
 ```
-main.o: main.c /usr/include/stdc-predef.h hello-world.h print-line.h \
- /usr/include/stdio.h /usr/include/bits/libc-header-start.h \
- /usr/include/features.h /usr/include/sys/cdefs.h \
- /usr/include/bits/wordsize.h /usr/include/bits/long-double.h \
- /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h \
- /usr/lib/gcc/x86_64-pc-linux-gnu/8.2.1/include/stddef.h \
- /usr/lib/gcc/x86_64-pc-linux-gnu/8.2.1/include/stdarg.h \
- /usr/include/bits/types.h /usr/include/bits/typesizes.h \
- /usr/include/bits/types/__fpos_t.h /usr/include/bits/types/__mbstate_t.h \
- /usr/include/bits/types/__fpos64_t.h /usr/include/bits/types/__FILE.h \
- /usr/include/bits/types/FILE.h /usr/include/bits/types/struct_FILE.h \
- /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+#!/bin/bash
+
+tnt \
+dst e3--test \
+dep e3-test.c \
+build-script "gcc -o \$(tnt @dst) \$(tnt @dep)"
+
+
+tnt -> scan, sort and run all needed scripts for build/trigger onchange for 
+all tracked directories/files in working directory and it's children.
+
+
 ```

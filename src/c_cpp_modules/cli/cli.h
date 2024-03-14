@@ -1,11 +1,6 @@
 #ifndef TNT_APP_H
 #define TNT_APP_H
 
-typedef struct
-{
-    char *cwd;
-} TntApp;
-
 #define CMD_LONGOTP_WORKINGDIRECTORY "working-directory="
 #define CMD_LONGOTP_WORKINGDIRECTORY_LEN sizeof(CMD_LONGOTP_WORKINGDIRECTORY) - 1
 

@@ -1,5 +1,8 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include "app.h"
 
 void app_exit_error(char *strerror)
@@ -30,67 +33,67 @@ char *tnt_getcwd()
     return ptr;
 };
 
-void app_select_target(TntApp app)
+void app_select_dst(TntApp app)
 {
-    printf("app_select_target");
+    printf("app_select_dst\n");
 };
 
 void app_dep_add(TntApp app)
 {
-    printf("app_dep_add");
+    printf("app_dep_add\n");
 };
 
 void app_dep_rm(TntApp app)
 {
-    printf("app_dep_rm");
+    printf("app_dep_rm\n");
 };
 
 void app_rel_add(TntApp app)
 {
-    printf("app_rel_add");
+    printf("app_rel_add\n");
 };
 
 void app_rel_rm(TntApp app)
 {
-    printf("app_rel_rm");
+    printf("app_rel_rm\n");
 };
 
 void app_set_build_script(TntApp app)
 {
-    printf("app_set_build_script");
+    printf("app_set_build_script\n");
 };
 
 void app_set_onchange_script(TntApp app)
 {
-    printf("app_set_onchange_script");
+    printf("app_set_onchange_script\n");
 };
 
 void app_chdir(TntApp app)
 {
-    printf("app_chdir");
+    printf("app_chdir\n");
 };
 
 void app_get_tar(TntApp app)
 {
-    printf("app_get_tar");
+    printf("app_get_tar\n");
 };
 
 void app_get_dep(TntApp app)
 {
-    printf("app_get_dep");
+    printf("app_get_dep\n");
 };
 
 void app_get_rel(TntApp app)
 {
-    printf("app_get_rel");
+    printf("app_get_rel\n");
 };
 
 void app_get_build_script(TntApp app)
 {
-    printf("app_get_build_script");
+    printf("app_get_build_script\n");
 };
 
 void app_get_onchange_script(TntApp app)
 {
-    printf("app_get_onchange_script");
+    printf("app_get_onchange_script\n");
 };
