@@ -72,15 +72,16 @@ SFile_SegDec sfile_get(SFileHandler *sf, SFile_Key key)
     return *sfile_getsegdecptr(sf, key);
 };
 
-bool sfile_set(SFileHandler *sf, SFile_Key key, SFile_SegDec *segdec)
+void sfile_set(SFileHandler *sf, SFile_Key key, SFile_SegDec *segdec)
 {
-    printf("fseek  : %ld\n", key.id * sizeof(SFile_SegDec));
-
     fseek(sf->io, key.id * sizeof(SFile_SegDec), SEEK_SET);
     fwrite(segdec, sizeof(SFile_SegDec), 1, sf->io);
     fflush(sf->io);
     *sfile_getsegdecptr(sf, key) = *segdec;
 };
+
+
+
 
 int main()
 {
