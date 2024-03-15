@@ -1,5 +1,6 @@
 #include <stdio.h>  //size_t
 #include <stdint.h> //int8_t
+#include <stdbool.h> //bool
 
 /*
  * <name>          : data file
