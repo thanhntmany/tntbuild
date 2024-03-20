@@ -1,14 +1,14 @@
 #define _GNU_SOURCE   // to use F_OFD_SETLKW
 #include <errno.h>    // errno
+#include <fcntl.h>    // F_OFD_SETLKW
 #include <fcntl.h>    // open flags
 #include <stdio.h>    // printf
-#include <stdlib.h>   // exit
 #include <stdlib.h>   // aligned_alloc
+#include <stdlib.h>   // exit
 #include <string.h>   // strerror, memcpy
 #include <sys/stat.h> // fstat, stat
 #include <sys/uio.h>  // iovec, preadv
 #include <unistd.h>   // open, sysconf
-#include <fcntl.h>    // F_OFD_SETLKW
 #include "pstream.h"
 
 /* file page mapping */
@@ -215,25 +215,4 @@ int pstream_close(struct pstream *ps)
 
     pstream_clear(ps);
     return close(ps->filedes);
-};
-
-int main()
-{
-    struct pstream ps;
-    char *test = "0123456789012345678901234567890123456789";
-    char buff[50];
-
-    pstream_open(&ps, "./pstreamtest.db", 1048576); // 1MB
-
-    printf("\nREAD\n");
-    pstream_read(&ps, 4090, buff, 10);
-    buff[10] = 0;
-    printf("Read :%s\n", buff);
-
-    printf("\nWRITE\n");
-    pstream_write(&ps, 4090, test, strlen(test));
-    printf("Write : Done\n");
-
-    pstream_close(&ps);
-    return 0;
 };

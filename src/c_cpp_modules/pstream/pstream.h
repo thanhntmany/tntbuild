@@ -1,10 +1,11 @@
 #ifndef PSTREAM_H
 #define PSTREAM_H
 
-#include <stdio.h>   //size_t
-#include <stdint.h>  //int8_t
-#include <stdbool.h> //bool
-#include <sys/uio.h> //iovec
+#include <stdio.h>   // size_t
+#include <stdint.h>  // int8_t
+#include <stdbool.h> // bool
+#include <sys/uio.h> // struct iovec
+#include <fcntl.h>   // struct flock
 
 /* file mapping */
 struct pstream_page
@@ -32,7 +33,6 @@ ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyt
 ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte);
 void pstream_flush(struct pstream *ps);
 void pstream_clear(struct pstream *ps);
-int pstream_close(struct pstream *ps);
 int pstream_close(struct pstream *ps);
 
 #endif
