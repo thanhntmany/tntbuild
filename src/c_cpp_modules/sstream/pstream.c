@@ -59,7 +59,7 @@ static void free_page(struct pstream_page *page)
 };
 
 /* Paged stream */
-int pstream_open(struct pstream *ps, const char *filename, int page_max)
+int pstream_open(struct pstream *ps, const char *filename, off_t max_byte)
 {
     int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd < 0) // #TODO: error handling
@@ -84,7 +84,9 @@ int pstream_open(struct pstream *ps, const char *filename, int page_max)
     while (b < bs)
         b <<= 1;
     ps->page_size = b;
-    ps->page_max = page_max > 0 ? page_max : 32;
+    ps->page_max = max_byte / b;
+    if (ps->page_max < 2)
+        ps->page_max = 256;
     ps->__page_count = 0;
 
     return 0;
@@ -212,7 +214,7 @@ int main()
     char buff[50];
 
     // #TODO: Locking?
-    pstream_open(&ps, "./pstreamtest.db", 1);
+    pstream_open(&ps, "./pstreamtest.db", 1048576); // 1MB
 
     printf("\nREAD\n");
     pstream_read(&ps, 4090, buff, 10);
