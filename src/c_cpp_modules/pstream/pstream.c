@@ -126,6 +126,9 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
                 }
                 else
                     ps->pages_head = NULL;
+
+                if (_p->changed)
+                    page_save(ps, _p);
                 free_page(_p);
             };
             --ps->__page_count;
