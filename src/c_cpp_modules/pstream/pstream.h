@@ -36,10 +36,15 @@ struct pstream
  * if pool_size=0, use default: 512 MB.
  */
 int pstream_open(struct pstream *ps, const char *filename);
+
 ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte);
+
 ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte);
+
 void pstream_flush(struct pstream *ps);
+
 void pstream_clear(struct pstream *ps);
+
 int pstream_close(struct pstream *ps);
 
 #endif
