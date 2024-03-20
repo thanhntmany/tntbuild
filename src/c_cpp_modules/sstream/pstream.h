@@ -23,14 +23,15 @@ struct pstream
     int __page_count;
     int page_max;
     int filedes;
+    struct flock flock;
 };
 
 /* Functions */
 int pstream_open(struct pstream *ps, const char *filename, off_t max_byte);
 ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte);
 ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte);
-int pstream_flush(struct pstream *ps);
-int pstream_clear(struct pstream *ps);
+void pstream_flush(struct pstream *ps);
+void pstream_clear(struct pstream *ps);
 int pstream_close(struct pstream *ps);
 int pstream_close(struct pstream *ps);
 

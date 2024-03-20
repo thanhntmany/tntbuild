@@ -1,3 +1,4 @@
+#define _GNU_SOURCE   // to use F_OFD_SETLKW
 #include <errno.h>    // errno
 #include <fcntl.h>    // open flags
 #include <stdio.h>    // printf
@@ -7,6 +8,7 @@
 #include <sys/stat.h> // fstat, stat
 #include <sys/uio.h>  // iovec, preadv
 #include <unistd.h>   // open, sysconf
+#include <fcntl.h>    // F_OFD_SETLKW
 #include "pstream.h"
 
 /* file page mapping */
@@ -68,6 +70,13 @@ int pstream_open(struct pstream *ps, const char *filename, off_t max_byte)
         close(fd);
         exit(-1);
     };
+
+    ps->flock.l_whence = SEEK_SET;
+    ps->flock.l_start = 0;
+    ps->flock.l_len = 1;
+
+    ps->flock.l_type = F_WRLCK;
+    fcntl(fd, F_OFD_SETLKW, &ps->flock);
 
     ps->filedes = fd;
     ps->pages_head = NULL;
@@ -175,7 +184,7 @@ ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size
     return nbyte;
 };
 
-int pstream_flush(struct pstream *ps)
+void pstream_flush(struct pstream *ps)
 {
     struct pstream_page *page = ps->pages_head;
     while (page)
@@ -184,10 +193,9 @@ int pstream_flush(struct pstream *ps)
             page_save(ps, page);
         page = page->next;
     };
-    return 0;
 };
 
-int pstream_clear(struct pstream *ps)
+void pstream_clear(struct pstream *ps)
 {
     pstream_flush(ps);
     struct pstream_page *page = ps->pages_head;
@@ -198,11 +206,13 @@ int pstream_clear(struct pstream *ps)
         page = page->next;
     };
     ps->__page_count = 0;
-    return 0;
 };
 
 int pstream_close(struct pstream *ps)
 {
+    ps->flock.l_type = F_UNLCK;
+    fcntl(ps->filedes, F_OFD_SETLK, &ps->flock);
+
     pstream_clear(ps);
     return close(ps->filedes);
 };
@@ -213,7 +223,6 @@ int main()
     char *test = "0123456789012345678901234567890123456789";
     char buff[50];
 
-    // #TODO: Locking?
     pstream_open(&ps, "./pstreamtest.db", 1048576); // 1MB
 
     printf("\nREAD\n");
