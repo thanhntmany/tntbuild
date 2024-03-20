@@ -1,79 +1,41 @@
-#include <stdio.h>   //size_t
-#include <stdint.h>  //int8_t
-#include <stdbool.h> //bool
+#ifndef SFILE_H
+#define SFILE_H
+
+#include "pstream/pstream.h" //pstream
 
 /*
- * <name>          : data file
- * <name>.sfile_idx: Segmented indexing of <name>
- *    Always load/change/append file by a chunk of 1KB(32bit)/2KB(64bit)
- *
- * SFile_F_*: structure of blob in physical file
+ * Prefer x64 architecture
  */
 
-// DB_Key = offset of SFile_F_SegDec in physical file
-typedef struct
+struct sfile_fdb_header
 {
-    size_t offset; // offset in .db file
-    size_t size;
-} SFile_SegDec;
-
-/* intermediate page */
-typedef struct SFile_IPage
-{
-    void *idx[256];
-} SFile_IPage;
-
-/* leaf page */
-typedef struct SFile_Page
-{
-    SFile_SegDec idx[256];
-} SFile_Page;
-
-typedef union
-{
-    int32_t id;
-    int8_t p[4];
-} SFile_Key;
-
-typedef struct SFileHandler
-{
-    FILE *io;
-    SFile_IPage *root;
-} SFileHandler;
-
-typedef union
-{
-    int32_t id;
-    int8_t p[4];
-} db_key;
-
-typedef struct strbuf
-{
-    void *buf;
-    size_t size;
-    size_t len; // defaulte = -1
-} strbuf;
-
-/* ---------------------- */
-/* ruler unit loader */
-struct rul_ipage
-{
-    void *idx[256]; // 2^8
+    size_t next_seg_offset;
+    size_t next_idx;
+    size_t last_free_seg; // --> backward linked list
 };
 
-/* SegmentLoader */
-struct segdb_handler
+struct sfile_fdb_segheader
 {
-    size_t unit_size;
+    size_t used;
+    size_t size;
+    // size_t prev_free_seg; only while ".used==0"
+};
 
-    struct ipage
+typedef size_t sfile_fidb_id;
+
+struct sfile_fidb
+{
+    struct idx
     {
-        void *idx;    // indexes for intermediate pages
-        size_t size; // always is a power of 2 and >= no. pages needed
-    } ipage;
-
-    FILE *stream;
-    size_t bufsize;
+        size_t f_offset; // =0 mean Nothing
+    } *idx;
 };
 
-typedef size_t segdb_key;
+struct sfile
+{
+    char *pathname;
+    struct pstream *db_pstream;
+    struct pstream *idb_pstream;
+};
+
+#endif
