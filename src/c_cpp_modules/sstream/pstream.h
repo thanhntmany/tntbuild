@@ -9,11 +9,10 @@
 /* file mapping */
 struct pstream_page
 {
-    struct iovec iovec;
     off_t offset;
-    size_t len; /* Length of data. */
     struct pstream_page *prev;
     struct pstream_page *next;
+    struct iovec iovec;
     bool changed;
 };
 
@@ -21,12 +20,18 @@ struct pstream
 {
     struct pstream_page *pages_head; // linked list
     off_t page_size;
-    off_t __file_size;
+    int __page_count;
+    int page_max;
     int filedes;
 };
 
-
 /* Functions */
+int pstream_open(struct pstream *ps, const char *filename, int page_max);
+ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte);
+ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte);
+int pstream_flush(struct pstream *ps);
+int pstream_clear(struct pstream *ps);
+int pstream_close(struct pstream *ps);
 int pstream_close(struct pstream *ps);
 
 #endif

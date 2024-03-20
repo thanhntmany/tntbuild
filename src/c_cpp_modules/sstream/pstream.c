@@ -49,7 +49,6 @@ static struct pstream_page *load_page(struct pstream *ps, off_t page_offset)
     page->iovec.iov_base = aligned_alloc(page->iovec.iov_len, page->iovec.iov_len);
     page->offset = page_offset;
     page_load(ps, page);
-
     page->next = page->prev = NULL;
     return page;
 };
@@ -60,10 +59,9 @@ static void free_page(struct pstream_page *page)
 };
 
 /* Paged stream */
-int pstream_open(struct pstream *ps, const char *filename)
+int pstream_open(struct pstream *ps, const char *filename, int page_max)
 {
     int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    printf("\nfd: [%i]\n", fd);
     if (fd < 0) // #TODO: error handling
     {
         printf("fd error: [%s]\n", strerror(errno));
@@ -81,12 +79,13 @@ int pstream_open(struct pstream *ps, const char *filename)
         close(fd);
         exit(-1);
     };
-    ps->__file_size = st.st_size;
 
     off_t b = 512, bs = (off_t)st.st_blksize;
     while (b < bs)
         b <<= 1;
     ps->page_size = b;
+    ps->page_max = page_max > 0 ? page_max : 32;
+    ps->__page_count = 0;
 
     return 0;
 };
@@ -94,19 +93,47 @@ int pstream_open(struct pstream *ps, const char *filename)
 static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off_t *offset_p)
 {
     off_t page_offset = offset - (*offset_p = offset % ps->page_size);
+    struct pstream_page *page = ps->pages_head, *_p = NULL;
 
-    struct pstream_page *page = ps->pages_head;
-    while (page)
+    while (page && page->offset != page_offset)
+        page = (_p = page)->next;
+
+    if (page)
     {
-        if (page->offset == page_offset)
+        if (page == ps->pages_head)
             return page;
-        page = page->next;
+    }
+    else
+    {
+        if (++ps->__page_count >= ps->page_max)
+        {
+            if (_p)
+            {
+                if (_p->prev)
+                {
+                    _p->prev->next = NULL;
+                }
+                else
+                    ps->pages_head = NULL;
+                free_page(_p);
+            };
+            --ps->__page_count;
+        };
+        page = load_page(ps, page_offset);
     };
 
-    page = load_page(ps, page_offset);
-    page->next = ps->pages_head;
-    ps->pages_head = page;
-    return page;
+    if (page->prev)
+    {
+        page->prev->next = page->next;
+        page->prev = NULL;
+    };
+    if (page->next)
+        page->next->prev = page->prev;
+
+    if (page->next = ps->pages_head)
+        page->next->prev = page;
+
+    return ps->pages_head = page;
 };
 
 ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte)
@@ -124,7 +151,7 @@ ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyt
         buffer += load;
     } while (nbyte);
 
-    return 0;
+    return nbyte;
 };
 
 ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte)
@@ -143,7 +170,7 @@ ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size
         buffer += load;
     } while (nbyte);
 
-    return 0;
+    return nbyte;
 };
 
 int pstream_flush(struct pstream *ps)
@@ -168,13 +195,13 @@ int pstream_clear(struct pstream *ps)
         free_page(page);
         page = page->next;
     };
+    ps->__page_count = 0;
     return 0;
 };
 
 int pstream_close(struct pstream *ps)
 {
-    // #TODO:
-    pstream_flush(ps);
+    pstream_clear(ps);
     return close(ps->filedes);
 };
 
@@ -185,13 +212,17 @@ int main()
     char buff[50];
 
     // #TODO: Locking?
-    pstream_open(&ps, "./pstreamtest.db");
-    pstream_read(&ps, 4096, buff, 10);
-    buff[10] = 0;
-    printf("old :%s\n-----------\n", buff);
+    pstream_open(&ps, "./pstreamtest.db", 1);
 
-    test = "new0123456789012345678901234567890123456789";
-    pstream_write(&ps, 4096, test, strlen(test));
+    printf("\nREAD\n");
+    pstream_read(&ps, 4090, buff, 10);
+    buff[10] = 0;
+    printf("Read :%s\n", buff);
+
+    printf("\nWRITE\n");
+    pstream_write(&ps, 4090, test, strlen(test));
+    printf("Write : Done\n");
+
     pstream_close(&ps);
     return 0;
 };
