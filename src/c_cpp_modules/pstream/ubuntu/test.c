@@ -6,8 +6,8 @@ int main()
     char *test = "0123456789012345678901234567890123456789";
     char buff[50];
 
-    struct pstream ps;
-    pstream_open(&ps, "./pstreamtest.db", 1048576); // 1MB
+    struct pstream ps = {.pool_size = 1048576}; // 1MB
+    pstream_open(&ps, "./pstreamtest.db");
 
     pstream_read(&ps, 4090, buff, 10);
     buff[10] = 0;

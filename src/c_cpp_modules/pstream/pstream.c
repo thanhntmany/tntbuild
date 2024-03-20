@@ -61,7 +61,7 @@ static void free_page(struct pstream_page *page)
 };
 
 /* Paged stream */
-int pstream_open(struct pstream *ps, const char *filename, off_t max_byte)
+int pstream_open(struct pstream *ps, const char *filename)
 {
     int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd < 0) // #TODO: error handling
@@ -93,7 +93,11 @@ int pstream_open(struct pstream *ps, const char *filename, off_t max_byte)
     while (b < bs)
         b <<= 1;
     ps->page_size = b;
-    ps->page_max = max_byte / b;
+
+    if (!ps->pool_size)
+        ps->pool_size = 512 * 1024 * 1024; //512MB
+
+    ps->page_max = ps->pool_size / b;
     if (ps->page_max < 2)
         ps->page_max = 256;
     ps->__page_count = 0;

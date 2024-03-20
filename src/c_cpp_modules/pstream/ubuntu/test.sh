@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# clear
-# gcc -o ./pstream.o -c ./pstream.c
-# gcc -o ./pstream_test ./pstream_test.c ./pstream.o
-
-# echo @==========================================
-# time ./pstream_test
-
 . ./build.sh
 obj=$dst
 
