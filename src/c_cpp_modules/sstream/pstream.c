@@ -111,30 +111,38 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
 
 ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte)
 {
-    off_t offset_p;
-    struct pstream_page *page = page_of_offset(ps, offset, &offset_p);
+    off_t offset_p, load, page_size = ps->page_size;
+    do
+    {
+        struct pstream_page *page = page_of_offset(ps, offset, &offset_p);
+        load = page_size - offset_p;
+        if (load >= nbyte)
+            load = nbyte;
+        memcpy(buffer, pstream_buff_of_page(page) + offset_p, load);
+        nbyte -= load;
+        offset += load;
+        buffer += load;
+    } while (nbyte);
 
-    printf("offset_p :%ld\n", offset_p);
-    printf("pstream_buff_of_page :%p\n", pstream_buff_of_page(page));
-    printf("iov_base :%p\n", page->iovec.iov_base);
-    printf("iov_len :%ld\n", page->iovec.iov_len);
-    printf("offset_p :%ld\n", offset_p);
-    printf("from :%p\n", pstream_buff_of_page(page) + offset_p);
-    // printf("old :%s", test);
-
-    memcpy(buffer, pstream_buff_of_page(page) + offset_p, nbyte);
-    // #TODO: overflow to next pages
     return 0;
 };
 
 ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte)
 {
-    off_t offset_p;
-    struct pstream_page *page = page_of_offset(ps, offset, &offset_p);
-    page->changed = true;
-    // memcpy(((void *)pstream_buff_of_page(page)) + offset_p, buffer, nbyte);
-    memcpy(pstream_buff_of_page(page) + offset_p, buffer, nbyte);
-    // #TODO: overflow to next pages
+    off_t offset_p, load, page_size = ps->page_size;
+    do
+    {
+        struct pstream_page *page = page_of_offset(ps, offset, &offset_p);
+        page->changed = true;
+        load = page_size - offset_p;
+        if (load >= nbyte)
+            load = nbyte;
+        memcpy(pstream_buff_of_page(page) + offset_p, buffer, load);
+        nbyte -= load;
+        offset += load;
+        buffer += load;
+    } while (nbyte);
+
     return 0;
 };
 
@@ -144,10 +152,7 @@ int pstream_flush(struct pstream *ps)
     while (page)
     {
         if (page->changed)
-        {
             page_save(ps, page);
-            printf("Save page: %ld\n", page->offset);
-        };
         page = page->next;
     };
     return 0;
@@ -176,17 +181,17 @@ int pstream_close(struct pstream *ps)
 int main()
 {
     struct pstream ps;
-    char *test = "ok somaethinga here okkkkkkkkke";
+    char *test = "0123456789012345678901234567890123456789";
     char buff[50];
 
     // #TODO: Locking?
     pstream_open(&ps, "./pstreamtest.db");
-    pstream_read(&ps, 5, buff, 6);
-    buff[6] = 0;
-    printf("old :%s\n", buff);
+    pstream_read(&ps, 4096, buff, 10);
+    buff[10] = 0;
+    printf("old :%s\n-----------\n", buff);
 
-    // test = "newwww";
-    pstream_write(&ps, 3, test, strlen(test));
+    test = "new0123456789012345678901234567890123456789";
+    pstream_write(&ps, 4096, test, strlen(test));
     pstream_close(&ps);
     return 0;
 };
