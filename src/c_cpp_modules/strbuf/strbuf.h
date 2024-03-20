@@ -13,14 +13,14 @@
 /**
  * This is the string buffer structure. The `len` member can be used to
  * determine the current length of the string, and `buf` member provides
- * access to the string itself.
+ * access to the string itself. Alloc is the size of alloced buffer.
  */
-typedef struct
+struct strbuf
 {
 	char *buf;
 	size_t alloc;
 	size_t len;
-} strbuf;
+};
 
 extern char strbuf_slopbuf[];
 #define STRBUF_INIT           \

@@ -1,5 +1,5 @@
-#include <stdio.h>  //size_t
-#include <stdint.h> //int8_t
+#include <stdio.h>   //size_t
+#include <stdint.h>  //int8_t
 #include <stdbool.h> //bool
 
 /*
@@ -40,3 +40,40 @@ typedef struct SFileHandler
     FILE *io;
     SFile_IPage *root;
 } SFileHandler;
+
+typedef union
+{
+    int32_t id;
+    int8_t p[4];
+} db_key;
+
+typedef struct strbuf
+{
+    void *buf;
+    size_t size;
+    size_t len; // defaulte = -1
+} strbuf;
+
+/* ---------------------- */
+/* ruler unit loader */
+struct rul_ipage
+{
+    void *idx[256]; // 2^8
+};
+
+/* SegmentLoader */
+struct segdb_handler
+{
+    size_t unit_size;
+
+    struct ipage
+    {
+        void *idx;    // indexes for intermediate pages
+        size_t size; // always is a power of 2 and >= no. pages needed
+    } ipage;
+
+    FILE *stream;
+    size_t bufsize;
+};
+
+typedef size_t segdb_key;
