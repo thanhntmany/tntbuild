@@ -10,22 +10,44 @@
  * allocation size of buffer to optimize operations.
  */
 
-/**
- * This is the string buffer structure. The `len` member can be used to
- * determine the current length of the string, and `buf` member provides
- * access to the string itself. Alloc is the size of alloced buffer.
+/*
+ * ### NOTE: This is NOT null-terminated.
+ *
+ * This is the string buffer structure.
+ * `buf`  : ponter to the buffer (string itself)
+ * `len`  : the current length of the string
+ * `alloc`: the size of alloced buffer. (always > `len`)
  */
 struct strbuf
 {
 	char *buf;
-	size_t alloc;
 	size_t len;
+	size_t alloc;
 };
 
-extern char strbuf_slopbuf[];
-#define STRBUF_INIT           \
-	{                         \
-		.buf = strbuf_slopbuf \
-	}
+/* # NOTE: Use strbuf_free() to free instance after using */
+struct strbuf *strbuf_init(size_t size);
+
+/* free internal buff and remove strbuf instance*/
+void strbuf_free(struct strbuf *sb);
+
+void strbuf_clear(struct strbuf *sb);
+
+/*
+ * Buffer
+ */
+
+void strbuf_memset(struct strbuf *sb, int c, size_t start, size_t count);
+
+/*
+ * String
+ */
+
+struct strbuf *strbuf_loadstr(struct strbuf *sb, char *str);
+
+char *strbuf_asstr(struct strbuf *sb);
+
+/* # NOTE: Use free() to free this (char *) after using */
+char *strbuf_tostr(struct strbuf *sb);
 
 #endif
