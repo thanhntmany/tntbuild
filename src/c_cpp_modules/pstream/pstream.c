@@ -154,7 +154,7 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
     return ps->pages_head = page;
 };
 
-ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte)
+void pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte)
 {
     off_t offset_p, load, page_size = ps->page_size;
     do
@@ -168,11 +168,9 @@ ssize_t pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyt
         offset += load;
         buffer += load;
     } while (nbyte);
-
-    return nbyte;
 };
 
-ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte)
+void pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte)
 {
     off_t offset_p, load, page_size = ps->page_size;
     do
@@ -187,8 +185,6 @@ ssize_t pstream_write(struct pstream *ps, off_t offset, const void *buffer, size
         offset += load;
         buffer += load;
     } while (nbyte);
-
-    return nbyte;
 };
 
 void pstream_flush(struct pstream *ps)
