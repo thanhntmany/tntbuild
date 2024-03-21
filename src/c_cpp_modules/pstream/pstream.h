@@ -37,9 +37,9 @@ struct pstream
  */
 int pstream_open(struct pstream *ps, const char *filename);
 
-void pstream_setlock(struct pstream *ps);
+void pstream_lockwrite(struct pstream *ps);
 
-void pstream_clearlock(struct pstream *ps);
+void pstream_unlockwrite(struct pstream *ps);
 
 void pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte);
 

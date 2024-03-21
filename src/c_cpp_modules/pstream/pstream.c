@@ -102,12 +102,12 @@ int pstream_open(struct pstream *ps, const char *filename)
     return 0;
 };
 
-void pstream_setlock(struct pstream *ps) {
+void pstream_lockwrite(struct pstream *ps) {
     ps->flock.l_type = F_WRLCK;
     fcntl(ps->filedes, F_OFD_SETLKW, &ps->flock);
 };
 
-void pstream_clearlock(struct pstream *ps) {
+void pstream_unlockwrite(struct pstream *ps) {
     ps->flock.l_type = F_UNLCK;
     fcntl(ps->filedes, F_OFD_SETLK, &ps->flock);
 };
