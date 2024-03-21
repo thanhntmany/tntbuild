@@ -73,10 +73,7 @@ int pstream_open(struct pstream *ps, const char *filename)
 
     ps->flock.l_whence = SEEK_SET;
     ps->flock.l_start = 0;
-    ps->flock.l_len = 1;
-
-    ps->flock.l_type = F_WRLCK;
-    fcntl(fd, F_OFD_SETLKW, &ps->flock);
+    ps->flock.l_len = 0;
 
     ps->filedes = fd;
     ps->pages_head = NULL;
@@ -103,6 +100,16 @@ int pstream_open(struct pstream *ps, const char *filename)
     ps->__page_count = 0;
 
     return 0;
+};
+
+void pstream_setlock(struct pstream *ps) {
+    ps->flock.l_type = F_WRLCK;
+    fcntl(ps->filedes, F_OFD_SETLKW, &ps->flock);
+};
+
+void pstream_clearlock(struct pstream *ps) {
+    ps->flock.l_type = F_UNLCK;
+    fcntl(ps->filedes, F_OFD_SETLK, &ps->flock);
 };
 
 static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off_t *offset_p)
@@ -213,9 +220,6 @@ void pstream_clear(struct pstream *ps)
 
 int pstream_close(struct pstream *ps)
 {
-    ps->flock.l_type = F_UNLCK;
-    fcntl(ps->filedes, F_OFD_SETLK, &ps->flock);
-
     pstream_clear(ps);
     return close(ps->filedes);
 };
