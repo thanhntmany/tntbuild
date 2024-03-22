@@ -12,6 +12,4 @@ pushd ../../ > /dev/null 2>&1
 gcc -I. -o $dst $src $obj
 popd > /dev/null 2>&1
 
-# gcc -I../../ -o $dst test.c $obj
-
-$dst
+time $dst

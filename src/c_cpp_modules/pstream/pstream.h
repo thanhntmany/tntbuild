@@ -32,10 +32,11 @@ struct pstream
 
 /* NOTE: You must specify pool_size before call pstream_open.
  *
- * E.g: struct pstream ps = {.pool_size = 1048576}; // 1MB
- * if pool_size=0, use default: 512 MB.
+ * if poolsize=0, use default: poolsize = the size of the file
  */
-int pstream_open(struct pstream *ps, const char *filename);
+struct pstream *pstream_open(const char *filename, size_t poolsize);
+
+void pstream_close(struct pstream *ps);
 
 void pstream_lockwrite(struct pstream *ps);
 
@@ -48,7 +49,5 @@ void pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t 
 void pstream_flush(struct pstream *ps);
 
 void pstream_clear(struct pstream *ps);
-
-int pstream_close(struct pstream *ps);
 
 #endif

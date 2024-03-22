@@ -61,8 +61,9 @@ static void free_page(struct pstream_page *page)
 };
 
 /* Paged stream */
-int pstream_open(struct pstream *ps, const char *filename)
+struct pstream *pstream_open(const char *filename, size_t poolsize)
 {
+    struct pstream *ps = malloc(sizeof(struct pstream));
     int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd < 0) // #TODO: error handling
     {
@@ -91,25 +92,34 @@ int pstream_open(struct pstream *ps, const char *filename)
         b <<= 1;
     ps->page_size = b;
 
-    if (!ps->pool_size)
-        ps->pool_size = 512 * 1024 * 1024; //512MB
+    if (!poolsize)
+        poolsize = st.st_size;
 
-    ps->page_max = ps->pool_size / b;
+    ps->page_max = poolsize / b;
     if (ps->page_max < 2)
-        ps->page_max = 256;
+        ps->page_max = 2;
     ps->__page_count = 0;
 
-    return 0;
+    return ps;
 };
 
-void pstream_lockwrite(struct pstream *ps) {
+void pstream_close(struct pstream *ps)
+{
+    pstream_clear(ps);
+    close(ps->filedes);
+    free(ps);
+};
+
+void pstream_lockwrite(struct pstream *ps)
+{
     ps->flock.l_type = F_WRLCK;
-    fcntl(ps->filedes, F_OFD_SETLKW, &ps->flock);
+    fcntl(ps->filedes, F_SETLKW, &ps->flock);
 };
 
-void pstream_unlockwrite(struct pstream *ps) {
+void pstream_unlockwrite(struct pstream *ps)
+{
     ps->flock.l_type = F_UNLCK;
-    fcntl(ps->filedes, F_OFD_SETLK, &ps->flock);
+    fcntl(ps->filedes, F_SETLK, &ps->flock);
 };
 
 static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off_t *offset_p)
@@ -127,22 +137,21 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
     }
     else
     {
-        if (++ps->__page_count >= ps->page_max)
+        ++ps->__page_count;
+        while (_p && ps->__page_count >= ps->page_max)
         {
-            if (_p)
+            if (_p->prev)
             {
-                if (_p->prev)
-                {
-                    _p->prev->next = NULL;
-                }
-                else
-                    ps->pages_head = NULL;
+                _p->prev->next = NULL;
+            }
+            else
+                ps->pages_head = NULL;
 
-                if (_p->changed)
-                    page_save(ps, _p);
-                free_page(_p);
-            };
+            if (_p->changed)
+                page_save(ps, _p);
+            free_page(_p);
             --ps->__page_count;
+            _p = _p->prev;
         };
         page = load_page(ps, page_offset);
     };
@@ -216,10 +225,4 @@ void pstream_clear(struct pstream *ps)
         page = page->next;
     };
     ps->__page_count = 0;
-};
-
-int pstream_close(struct pstream *ps)
-{
-    pstream_clear(ps);
-    return close(ps->filedes);
 };
