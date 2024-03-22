@@ -110,13 +110,13 @@ void pstream_close(struct pstream *ps)
     free(ps);
 };
 
-void pstream_lockwrite(struct pstream *ps)
+void pstream_lock(struct pstream *ps)
 {
     ps->flock.l_type = F_WRLCK;
     fcntl(ps->filedes, F_SETLKW, &ps->flock);
 };
 
-void pstream_unlockwrite(struct pstream *ps)
+void pstream_unlock(struct pstream *ps)
 {
     ps->flock.l_type = F_UNLCK;
     fcntl(ps->filedes, F_SETLK, &ps->flock);
