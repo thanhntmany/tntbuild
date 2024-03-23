@@ -21,7 +21,6 @@ struct pstream
 {
     struct pstream_page *pages_head; // linked list
     off_t page_size;
-    size_t pool_size; // need init before open
     int __page_count;
     int page_max;
     int filedes;
