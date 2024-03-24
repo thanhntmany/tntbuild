@@ -78,17 +78,21 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
         ++ps->__page_count;
         while (_p && ps->__page_count >= ps->page_max)
         {
-            if (_p->prev)
+            if (!_p->changed)
             {
-                _p->prev->next = NULL;
-            }
-            else
-                ps->pages_head = NULL;
+                if (_p->prev)
+                {
+                    _p->prev->next = _p->next;
+                }
+                else
+                    ps->pages_head = _p->next;
 
-            if (_p->changed)
-                page_save(ps, _p);
-            free_page(_p);
-            --ps->__page_count;
+                if (_p->next)
+                    _p->next->prev = _p->prev;
+
+                free_page(_p);
+                --ps->__page_count;
+            };
             _p = _p->prev;
         };
         page = load_page(ps, page_offset);
