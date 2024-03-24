@@ -2,90 +2,74 @@
 #include <string.h> // strlen, memcpy, memset
 #include "strbuf.h"
 
-struct strbuf *strbuf_init(size_t size)
+/*
+ * Basic initiating and freeing instances
+ */
+
+struct strbuf *strbuf(const size_t size)
 {
-    // if (size < 1) {
-    //     // #TODO: Error handling
-    //     // size must be greater than 0
-    // };
-    struct strbuf *sb = malloc(sizeof(struct strbuf));
-    sb->buf = malloc(sb->alloc = size);
+    struct strbuf *restrict sb = malloc(sizeof(struct strbuf));
+    sb->buf = malloc(sb->alloc = (size < 1 ? 1 : size));
     sb->len = 0;
     return sb;
 };
 
-void strbuf_clear(struct strbuf *sb)
+struct strbuf *strbuf_from(const char *restrict buf, const size_t len, const size_t ex)
+{
+    struct strbuf *restrict sb = malloc(sizeof(struct strbuf));
+    sb->len = len;
+    sb->buf = malloc(sb->alloc = len + ex);
+    memcpy(sb->buf, buf, len);
+    return sb;
+};
+
+void strbuf_load(struct strbuf *restrict sb, const size_t offset, const char *restrict buf, const size_t len)
+{
+    size_t end = offset + len;
+    if (sb->len < end)
+        if ((sb->len = end) >= sb->alloc)
+            sb->buf = realloc(sb->buf, sb->alloc = sb->len);
+
+    memcpy(sb->buf + offset, buf, len);
+};
+
+void strbuf_memset(struct strbuf *restrict sb, const int c, const size_t start, const size_t count)
+{
+    size_t end = start + count;
+    if (sb->len < end)
+        if ((sb->len = end) >= sb->alloc)
+            sb->buf = realloc(sb->buf, sb->alloc = sb->len);
+
+    memset(sb->buf + start, c, count);
+};
+
+void strbuf_clear(struct strbuf *restrict sb)
 {
     sb->len = 0;
 };
 
-void strbuf_free(struct strbuf *sb)
+void strbuf_free(struct strbuf *restrict sb)
 {
     free(sb->buf);
     free(sb);
 };
 
 /*
- * Buffer
+ * I/O with string
  */
 
-void strbuf_memset(struct strbuf *sb, int c, size_t start, size_t count)
+char *strbuf_asstr(struct strbuf *restrict sb)
 {
-    if (sb->alloc < start)
-        return;
-
-    if (count > sb->alloc - start)
-        count = sb->alloc - start;
-
-    memset(sb->buf + start, c, count);
-};
-
-void strbuf_cmp(){
-    // #TODO: int memcmp (const void *a1, const void *a2, size_t size)
-};
-
-void strbuf_copy(struct strbuf *dst, struct strbuf *src)
-{
-    if (dst->alloc <= src->len)
-    {
-        free(dst->buf);
-        dst->buf = malloc(dst->alloc = src->len + 1);
-    };
-    memcpy(dst->buf, src->buf, dst->len = src->len);
-};
-
-void strbuf_concat(){
-    // #TODO: concat multi strbuf
-};
-void strbuf_endsWith(){
-    // #TODO:
-};
-void strbuf_startsWith(){
-    // #TODO:
-};
-
-/*
- * String
- */
-
-struct strbuf *strbuf_loadstr(struct strbuf *sb, char *str)
-{
-    sb->len = strlen(str);
     if (sb->len >= sb->alloc)
-        sb->buf = malloc(sb->alloc = sb->len + 1);
-    memcpy(sb->buf, str, sb->len + 1);
-    return sb;
-};
+        sb->buf = realloc(sb->buf, sb->alloc = sb->len + 1);
 
-char *strbuf_asstr(struct strbuf *sb)
-{
     sb->buf[sb->len] = '\0'; // null-terminated
     return sb->buf;
 };
 
-char *strbuf_tostr(struct strbuf *sb)
+char *strbuf_tostr(struct strbuf *restrict sb)
 {
-    char *str = malloc(sb->len + 1);
+    char *restrict str = malloc(sb->len + 1);
     memcpy(str, sb->buf, sb->len);
     str[sb->len] = '\0'; // null-terminated
     return str;
@@ -95,4 +79,4 @@ char *strbuf_tostr(struct strbuf *sb)
  * File System
  */
 
-void strbuf_getcwd(){};
+void strbuf_getcwd(const struct strbuf *sb){};

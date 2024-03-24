@@ -15,7 +15,7 @@
  *
  * This is the string buffer structure.
  * `buf`  : ponter to the buffer (string itself)
- * `len`  : the current length of the string
+ * `len`  : the current length of the string/data
  * `alloc`: the size of alloced buffer. (always > `len`)
  */
 struct strbuf
@@ -25,29 +25,30 @@ struct strbuf
 	size_t alloc;
 };
 
-/* # NOTE: Use strbuf_free() to free instance after using */
-struct strbuf *strbuf_init(size_t size);
+struct strbuf *strbuf(const size_t size);
 
-/* free internal buff and remove strbuf instance*/
-void strbuf_free(struct strbuf *sb);
+struct strbuf *strbuf_from(const char *restrict buf, const size_t len, const size_t ex);
 
-void strbuf_clear(struct strbuf *sb);
+void strbuf_load(struct strbuf *restrict sb, const size_t offset, const char *restrict buf, const size_t len);
 
-/*
- * Buffer
- */
+void strbuf_memset(struct strbuf *restrict sb, const int c, const size_t start, const size_t count);
 
-void strbuf_memset(struct strbuf *sb, int c, size_t start, size_t count);
+void strbuf_clear(struct strbuf *restrict sb);
+
+void strbuf_free(struct strbuf *restrict sb);
 
 /*
- * String
+ * I/O with string
  */
 
-struct strbuf *strbuf_loadstr(struct strbuf *sb, char *str);
+char *strbuf_asstr(struct strbuf *restrict sb);
 
-char *strbuf_asstr(struct strbuf *sb);
+char *strbuf_tostr(struct strbuf *restrict sb);
 
-/* # NOTE: Use free() to free this (char *) after using */
-char *strbuf_tostr(struct strbuf *sb);
+/*
+ * File System
+ */
+
+void strbuf_getcwd(const struct strbuf *sb);
 
 #endif
