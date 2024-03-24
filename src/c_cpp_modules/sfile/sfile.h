@@ -7,11 +7,15 @@
  * Prefer x64 architecture
  */
 
-struct sfile_fdb_header
+#define SFILE_SIGNATURE "tnt/sfile:0.0.1"
+#define IDX_SUFFIX ".idx"
+
+struct __attribute__((packed)) sfile_fdb_header
 {
-    size_t next_seg_offset;
+    char sfile_signature[sizeof(SFILE_SIGNATURE)];
+    size_t next_offset;
     size_t next_idx;
-    size_t last_free_seg; // --> backward linked list
+    size_t last_free; // --> backward linked list
 };
 
 struct sfile_fdb_segheader
@@ -33,9 +37,15 @@ struct sfile_fidb
 
 struct sfile
 {
-    char *pathname;
-    struct pstream *db_pstream;
-    struct pstream *idb_pstream;
+    struct pstreams
+    {
+        struct pstream *db;
+        struct pstream *idb;
+    } pstreams;
+    struct sfile_fdb_header header;
 };
+
+struct sfile *sfile_open(const char *restrict db_path, const size_t db_poolsize, const size_t idb_poolsize);
+void sfile_close(struct sfile *sf);
 
 #endif

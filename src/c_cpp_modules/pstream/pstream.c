@@ -3,7 +3,7 @@
 #include <fcntl.h>    // F_OFD_SETLKW
 #include <fcntl.h>    // open flags
 #include <stdio.h>    // printf
-#include <stdlib.h>   // aligned_alloc
+#include <stdlib.h>   // malloc, aligned_alloc
 #include <stdlib.h>   // exit
 #include <string.h>   // strerror, memcpy
 #include <sys/stat.h> // fstat, stat
@@ -60,68 +60,6 @@ static void free_page(struct pstream_page *page)
     free(page);
 };
 
-/* Paged stream */
-struct pstream *pstream_open(const char *filename, size_t poolsize)
-{
-    struct pstream *ps = malloc(sizeof(struct pstream));
-    int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    if (fd < 0) // #TODO: error handling
-    {
-        printf("fd error: [%s]\n", strerror(errno));
-        close(fd);
-        exit(-1);
-    };
-
-    ps->flock.l_whence = SEEK_SET;
-    ps->flock.l_start = 0;
-    ps->flock.l_len = 0;
-
-    ps->filedes = fd;
-    ps->pages_head = NULL;
-
-    struct stat st;
-    if (fstat(fd, &st)) // #TODO: error handling
-    {
-        printf("\nfstat error: [%s]\n", strerror(errno));
-        close(fd);
-        exit(-1);
-    };
-
-    off_t b = 512, bs = (off_t)st.st_blksize;
-    while (b < bs)
-        b <<= 1;
-    ps->page_size = b;
-
-    if (!poolsize)
-        poolsize = st.st_size;
-
-    ps->page_max = poolsize / b;
-    if (ps->page_max < 2)
-        ps->page_max = 2;
-    ps->__page_count = 0;
-
-    return ps;
-};
-
-void pstream_close(struct pstream *ps)
-{
-    pstream_clear(ps);
-    close(ps->filedes);
-    free(ps);
-};
-
-void pstream_lock(struct pstream *ps)
-{
-    ps->flock.l_type = F_WRLCK;
-    fcntl(ps->filedes, F_SETLKW, &ps->flock);
-};
-
-void pstream_unlock(struct pstream *ps)
-{
-    ps->flock.l_type = F_UNLCK;
-    fcntl(ps->filedes, F_SETLK, &ps->flock);
-};
-
 static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off_t *offset_p)
 {
     off_t page_offset = offset - (*offset_p = offset % ps->page_size);
@@ -170,6 +108,61 @@ static struct pstream_page *page_of_offset(struct pstream *ps, off_t offset, off
     return ps->pages_head = page;
 };
 
+/* Paged stream */
+struct pstream *pstream_open(const char *filename, size_t poolsize)
+{
+    struct pstream *ps = malloc(sizeof(struct pstream));
+    int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd < 0) // #TODO: error handling
+    {
+        printf("fd error: [%s]\n", strerror(errno));
+        close(fd);
+        exit(-1);
+    };
+
+    ps->flock.l_whence = SEEK_SET;
+    ps->flock.l_start = 0;
+    ps->flock.l_len = 0;
+
+    ps->filedes = fd;
+    ps->pages_head = NULL;
+
+    struct stat st;
+    if (fstat(fd, &st)) // #TODO: error handling
+    {
+        printf("\nfstat error: [%s]\n", strerror(errno));
+        close(fd);
+        exit(-1);
+    };
+
+    off_t b = 512, bs = (off_t)st.st_blksize;
+    while (b < bs)
+        b <<= 1;
+    ps->page_size = b;
+
+    if (!poolsize)
+        poolsize = st.st_size;
+
+    ps->page_max = poolsize / b;
+    if (ps->page_max < 2)
+        ps->page_max = 2;
+    ps->__page_count = 0;
+
+    return ps;
+};
+
+void pstream_lock(struct pstream *ps)
+{
+    ps->flock.l_type = F_WRLCK;
+    fcntl(ps->filedes, F_SETLKW, &ps->flock);
+};
+
+void pstream_unlock(struct pstream *ps)
+{
+    ps->flock.l_type = F_UNLCK;
+    fcntl(ps->filedes, F_SETLK, &ps->flock);
+};
+
 void pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte)
 {
     off_t offset_p, load, page_size = ps->page_size;
@@ -216,7 +209,6 @@ void pstream_flush(struct pstream *ps)
 
 void pstream_clear(struct pstream *ps)
 {
-    pstream_flush(ps);
     struct pstream_page *page = ps->pages_head;
     ps->pages_head = NULL;
     while (page)
@@ -225,4 +217,11 @@ void pstream_clear(struct pstream *ps)
         page = page->next;
     };
     ps->__page_count = 0;
+};
+
+void pstream_close(struct pstream *ps)
+{
+    pstream_clear(ps);
+    close(ps->filedes);
+    free(ps);
 };

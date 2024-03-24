@@ -10,15 +10,15 @@ src=$(realpath ./test.c)
 
 pushd ../.. > /dev/null 2>&1
 
-pushd ./pstream/ubuntu > /dev/null 2>&1
-. ./build.sh
-obj="$obj $dst"
-popd > /dev/null 2>&1
+# pushd ./pstream/ubuntu > /dev/null 2>&1
+# . ./build.sh
+# obj="$obj $dst"
+# popd > /dev/null 2>&1
 
-echo gcc -o $dst -I. $src $obj
+gcc -o $dst -I. $src $obj ./pstream/ubuntu/\$build/pstream.o
 
 popd > /dev/null 2>&1
 
 pushd ./\$test/ > /dev/null 2>&1
-$dst
+time $dst
 popd > /dev/null 2>&1
