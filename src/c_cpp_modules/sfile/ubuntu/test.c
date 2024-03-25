@@ -6,11 +6,12 @@ int main()
     printf("Test\n");
     struct sfile *sf = sfile_open("_test_db.db", 256 * 1024, 4 * 1024);
 
-    char data[] = "Nguyễn Thuận Thành";
+    char data[6114] = "Nguyễn Thuận Thành, Nguyễn Thuận Thành, Nguyễn Thuận Thành, Nguyễn Thuận Thành, Nguyễn Thuận Thành, Nguyễn Thuận Thành0123456789";
     sfile_id id = sfile_alloc(sf, data, sizeof(data));
     printf("new id: %ld\n", id);
 
-    printf("sfile_get no byte read: %ld\n", sfile_get(sf, id, data, sizeof(data)));
+    printf("sfile_get N.o bytes read: %ld\n", sfile_get(sf, id, data, sizeof(data)));
+    // printf("sfile_get N.o bytes read: %ld\n", sfile_get(sf, id, data, 6114));
     printf("sfile_get: <%s>\n", data);
 
     sfile_flush(sf);

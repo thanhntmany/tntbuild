@@ -14,7 +14,7 @@
 /* file page mapping */
 #define pstream_buff_of_page(page) page->iovec.iov_base
 
-static ssize_t page_load(const struct pstream *restrict ps, struct pstream_page *restrict page)
+static ssize_t page_load(struct pstream *const restrict ps, struct pstream_page *const restrict page)
 {
     ssize_t bytes = preadv(ps->filedes, &page->iovec, 1, page->offset);
     if (bytes < 0)
@@ -30,7 +30,7 @@ static ssize_t page_load(const struct pstream *restrict ps, struct pstream_page 
     return bytes;
 };
 
-static ssize_t page_save(const struct pstream *restrict ps, struct pstream_page *restrict page)
+static ssize_t page_save(struct pstream *const restrict ps, struct pstream_page *const restrict page)
 {
     ssize_t bytes = pwritev(ps->filedes, &page->iovec, 1, page->offset);
     if (bytes < 0)
@@ -44,7 +44,7 @@ static ssize_t page_save(const struct pstream *restrict ps, struct pstream_page 
     return bytes;
 };
 
-static struct pstream_page *load_page(const struct pstream *restrict ps, const off_t page_offset)
+static struct pstream_page *load_page(struct pstream *const restrict ps, const off_t page_offset)
 {
     struct pstream_page *page = malloc(sizeof(struct pstream_page));
     page->iovec.iov_len = ps->page_size;
@@ -55,12 +55,12 @@ static struct pstream_page *load_page(const struct pstream *restrict ps, const o
     return page;
 };
 
-static void free_page(const struct pstream_page *restrict page)
+static void free_page(struct pstream_page *const restrict page)
 {
     free(page);
 };
 
-static struct pstream_page *page_of_offset(struct pstream *restrict ps, const off_t offset, off_t *restrict offset_p)
+static struct pstream_page *page_of_offset(struct pstream *const restrict ps, const off_t offset, off_t *const restrict offset_p)
 {
     off_t page_offset = offset - (*offset_p = offset % ps->page_size);
     struct pstream_page *page = ps->pages_head, *_p = NULL;
@@ -99,21 +99,18 @@ static struct pstream_page *page_of_offset(struct pstream *restrict ps, const of
     };
 
     if (page->prev)
-    {
         page->prev->next = page->next;
-        page->prev = NULL;
-    };
     if (page->next)
         page->next->prev = page->prev;
 
+    page->prev = NULL;
     if (page->next = ps->pages_head)
         page->next->prev = page;
-
     return ps->pages_head = page;
 };
 
 /* Paged stream */
-struct pstream *pstream_open(const char *restrict filename, size_t poolsize)
+struct pstream *pstream_open(const char *const restrict filename, const size_t poolsize)
 {
     struct pstream *ps = malloc(sizeof(struct pstream));
     int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -144,10 +141,7 @@ struct pstream *pstream_open(const char *restrict filename, size_t poolsize)
         b <<= 1;
     ps->page_size = b;
 
-    if (!poolsize)
-        poolsize = st.st_size;
-
-    ps->page_max = poolsize / b;
+    ps->page_max = (poolsize ? poolsize : st.st_size) / b;
     if (ps->page_max < 2)
         ps->page_max = 2;
     ps->__page_count = 0;
@@ -155,35 +149,35 @@ struct pstream *pstream_open(const char *restrict filename, size_t poolsize)
     return ps;
 };
 
-void pstream_lock(struct pstream *restrict ps)
+void pstream_lock(struct pstream *const restrict ps)
 {
     ps->flock.l_type = F_WRLCK;
     fcntl(ps->filedes, F_SETLKW, &ps->flock);
 };
 
-void pstream_unlock(struct pstream *restrict ps)
+void pstream_unlock(struct pstream *const restrict ps)
 {
     ps->flock.l_type = F_UNLCK;
     fcntl(ps->filedes, F_SETLK, &ps->flock);
 };
 
-void pstream_read(struct pstream *restrict ps, off_t offset, void *restrict buffer, size_t nbyte)
+void pstream_read(struct pstream *const restrict ps, off_t offset, void *restrict buffer, size_t nbyte)
 {
-    off_t offset_p, load, page_size = ps->page_size;
+    off_t off_p, load, page_size = ps->page_size;
     do
     {
-        struct pstream_page *page = page_of_offset(ps, offset, &offset_p);
-        load = page_size - offset_p;
+        struct pstream_page *page = page_of_offset(ps, offset, &off_p);
+        load = page_size - off_p;
         if (load >= nbyte)
             load = nbyte;
-        memcpy(buffer, pstream_buff_of_page(page) + offset_p, load);
+        memcpy(buffer, pstream_buff_of_page(page) + off_p, load);
         nbyte -= load;
         offset += load;
         buffer += load;
     } while (nbyte);
 };
 
-void pstream_write(struct pstream *restrict ps, off_t offset, const void *restrict buffer, size_t nbyte)
+void pstream_write(struct pstream *const restrict ps, off_t offset, const void *restrict buffer, size_t nbyte)
 {
     off_t offset_p, load, page_size = ps->page_size;
     do
@@ -200,7 +194,7 @@ void pstream_write(struct pstream *restrict ps, off_t offset, const void *restri
     } while (nbyte);
 };
 
-void pstream_flush(const struct pstream *restrict ps)
+void pstream_flush(struct pstream *const restrict ps)
 {
     struct pstream_page *page = ps->pages_head;
     while (page)
@@ -211,7 +205,7 @@ void pstream_flush(const struct pstream *restrict ps)
     };
 };
 
-void pstream_clear(struct pstream *restrict ps)
+void pstream_clear(struct pstream *const restrict ps)
 {
     struct pstream_page *page = ps->pages_head;
     ps->pages_head = NULL;
@@ -223,7 +217,7 @@ void pstream_clear(struct pstream *restrict ps)
     ps->__page_count = 0;
 };
 
-void pstream_close(struct pstream *restrict ps)
+void pstream_close(struct pstream *const restrict ps)
 {
     pstream_clear(ps);
     close(ps->filedes);

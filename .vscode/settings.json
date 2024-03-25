@@ -1,5 +1,9 @@
 {
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/src/c_cpp_modules"
-    ]
+    ],
+    "files.associations": {
+        "sfile.h": "c",
+        "pstream.h": "c"
+    }
 }

@@ -25,7 +25,6 @@ struct __attribute__((packed)) sfile_fdb_segheader
 {
     size_t used;
     size_t size;
-    // size_t prev_free_seg; only while ".used==0"
 };
 
 struct sfile
@@ -40,12 +39,14 @@ struct sfile
 
 struct sfile *sfile_open(const char *restrict db_path, const size_t db_poolsize, const size_t idb_poolsize);
 
-void sfile_close(struct sfile *sf);
+void sfile_flush(struct sfile *const restrict sf);
 
-void sfile_flush(struct sfile *sf);
+void sfile_close(struct sfile *const restrict sf);
 
-sfile_id sfile_alloc(struct sfile *restrict sf, const char *restrict buff, const size_t size);
+sfile_id sfile_alloc(struct sfile *const restrict sf, const char *restrict buffer, const size_t size);
 
-size_t sfile_get(const struct sfile *restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size);
+size_t sfile_get(struct sfile *const restrict sf, const sfile_id id, void *const restrict buffer, const size_t buffer_size);
+
+void sfile_set(struct sfile *const restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size);
 
 #endif
