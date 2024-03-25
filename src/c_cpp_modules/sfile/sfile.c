@@ -54,8 +54,8 @@ sfile_id sfile_alloc(struct sfile *restrict sf, const char *restrict buff, const
 {
     sfile_id id = sf->header.next_id;
     pstream_write(
-        sf->pstreams.idb, id * sizeof(sf->header.next_offset),
-        &sf->header.next_offset, sizeof(sf->header.next_offset));
+        sf->pstreams.idb, id * sizeof(sfile_offset),
+        &sf->header.next_offset, sizeof(sfile_offset));
 
     const struct sfile_fdb_segheader seg_header = {.used = size, .size = size};
     size_t p = sf->header.next_offset;
@@ -68,10 +68,24 @@ sfile_id sfile_alloc(struct sfile *restrict sf, const char *restrict buff, const
     return id;
 };
 
-void *sfile_get(struct sfile *sf, sfile_id id){};
+size_t sfile_get(const struct sfile *restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size)
+{
+    sfile_offset offset = 0;
+    pstream_read(sf->pstreams.idb, id * sizeof(sfile_offset), &offset, sizeof(sfile_offset));
+    if (!offset)
+        return 0; // null data
+
+    struct sfile_fdb_segheader sgh;
+    pstream_read(sf->pstreams.db, offset, &sgh, sizeof(struct sfile_fdb_segheader));
+    if (buffer_size < sgh.used)
+        return -1; // error
+
+    pstream_read(sf->pstreams.db, offset + sizeof(struct sfile_fdb_segheader), buffer, sgh.used);
+    return sgh.used; // The return value is the number of bytes actually read.
+};
 
 void *sfile_set(struct sfile *sf, sfile_id id, char *buff, size_t size){};
 
-void *sfile_free(struct sfile *sf, sfile_id id, char *buff, size_t size){};
-
 void *sfile_defrag(struct sfile *sf){};
+
+void *sfile_free(struct sfile *sf, sfile_id id, char *buff, size_t size){};

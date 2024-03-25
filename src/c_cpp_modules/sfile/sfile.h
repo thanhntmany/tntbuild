@@ -11,11 +11,12 @@
 #define IDX_SUFFIX ".idx"
 
 typedef size_t sfile_id;
+typedef size_t sfile_offset;
 
 struct __attribute__((packed)) sfile_fdb_header
 {
     char sfile_signature[sizeof(SFILE_SIGNATURE)];
-    size_t next_offset;
+    sfile_offset next_offset;
     sfile_id next_id;
     size_t last_free; // --> backward linked list
 };
@@ -25,14 +26,6 @@ struct __attribute__((packed)) sfile_fdb_segheader
     size_t used;
     size_t size;
     // size_t prev_free_seg; only while ".used==0"
-};
-
-struct sfile_fidb
-{
-    struct idx
-    {
-        size_t f_offset; // =0 mean Nothing
-    } *idx;
 };
 
 struct sfile
@@ -52,5 +45,7 @@ void sfile_close(struct sfile *sf);
 void sfile_flush(struct sfile *sf);
 
 sfile_id sfile_alloc(struct sfile *restrict sf, const char *restrict buff, const size_t size);
+
+size_t sfile_get(const struct sfile *restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size);
 
 #endif
