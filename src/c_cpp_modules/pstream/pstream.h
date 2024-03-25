@@ -34,20 +34,20 @@ struct pstream
  * `poolsize` is in bytes.
  * if poolsize=0, use default: poolsize = the size of the file
  */
-struct pstream *pstream_open(const char *filename, size_t poolsize);
+struct pstream *pstream_open(const char *restrict filename, size_t poolsize);
 
-void pstream_lock(struct pstream *ps);
+void pstream_lock(struct pstream *restrict ps);
 
-void pstream_read(struct pstream *ps, off_t offset, void *buffer, size_t nbyte);
+void pstream_unlock(struct pstream *restrict ps);
 
-void pstream_write(struct pstream *ps, off_t offset, const void *buffer, size_t nbyte);
+void pstream_read(struct pstream *restrict ps, off_t offset, void *restrict buffer, size_t nbyte);
 
-void pstream_flush(struct pstream *ps);
+void pstream_write(struct pstream *restrict ps, off_t offset, const void *restrict buffer, size_t nbyte);
 
-void pstream_unlock(struct pstream *ps);
+void pstream_flush(const struct pstream *restrict ps);
 
-void pstream_clear(struct pstream *ps);
+void pstream_clear(struct pstream *restrict ps);
 
-void pstream_close(struct pstream *ps);
+void pstream_close(struct pstream *restrict ps);
 
 #endif
