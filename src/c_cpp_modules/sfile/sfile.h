@@ -1,6 +1,10 @@
 #ifndef SFILE_H
 #define SFILE_H
 
+/**
+ * Segmented File
+*/
+
 #include "pstream/pstream.h" //pstream
 
 /*
