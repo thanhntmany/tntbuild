@@ -10,9 +10,9 @@ int main()
     sfile_id id = sfile_alloc(sf, data, sizeof(data));
     printf("new id: %ld\n", id);
 
-    printf("sfile_get N.o bytes read: %ld\n", sfile_get(sf, id, data, sizeof(data)));
-    // printf("sfile_get N.o bytes read: %ld\n", sfile_get(sf, id, data, 6114));
-    printf("sfile_get: <%s>\n", data);
+    printf("sfile_read N.o bytes read: %ld\n", sfile_read(sf, id, data, sizeof(data)));
+    // printf("sfile_read N.o bytes read: %ld\n", sfile_read(sf, id, data, 6114));
+    printf("sfile_read: <%s>\n", data);
 
     sfile_flush(sf);
     sfile_close(sf);

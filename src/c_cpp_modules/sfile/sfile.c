@@ -110,7 +110,18 @@ sfile_id sfile_alloc(struct sfile *const restrict sf, const char *restrict buffe
     return sf->header.next_id++;
 };
 
-size_t sfile_get(struct sfile *const restrict sf, const sfile_id id, void *const restrict buffer, const size_t buffer_size)
+size_t sfile_read_size(struct sfile *const restrict sf, const sfile_id id)
+{
+    sfile_offset offset = idb_get(sf, id);
+    if (!offset)
+        return 0;
+
+    struct sfile_fdb_segheader sgh;
+    db_read_segheader(sf, offset, &sgh);
+    return sgh.used;
+};
+
+size_t sfile_read(struct sfile *const restrict sf, const sfile_id id, void *const restrict buffer, const size_t buffer_size)
 {
     sfile_offset offset = idb_get(sf, id);
     if (!offset)
@@ -121,11 +132,11 @@ size_t sfile_get(struct sfile *const restrict sf, const sfile_id id, void *const
     if (buffer_size < sgh.used)
         return -1; // error
 
-    pstream_read(sf->pstreams.db, offset + sizeof(struct sfile_fdb_segheader), buffer, sgh.used);
+    db_read_seg(sf, offset, buffer, sgh.used);
     return sgh.used; // The return value is the number of bytes actually read.
 };
 
-void sfile_set(struct sfile *const restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size)
+void sfile_write(struct sfile *const restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size)
 {
     sfile_offset offset = idb_get(sf, id);
     if (offset)
@@ -149,6 +160,12 @@ void sfile_set(struct sfile *const restrict sf, const sfile_id id, void *restric
     idb_set(sf, id, db_alloc(sf, buffer, buffer_size));
 };
 
-void *sfile_free(const struct sfile *restrict sf, const sfile_id id){};
+void *sfile_free(struct sfile *const restrict sf, const sfile_id id)
+{
+    db_free(sf, idb_get(sf, id));
+    idb_set(sf, id, 0);
+};
 
-void *sfile_defrag(struct sfile *sf){};
+void *sfile_defrag(struct sfile *sf){
+    // @TODO:
+};

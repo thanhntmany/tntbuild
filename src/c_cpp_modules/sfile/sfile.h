@@ -45,8 +45,12 @@ void sfile_close(struct sfile *const restrict sf);
 
 sfile_id sfile_alloc(struct sfile *const restrict sf, const char *restrict buffer, const size_t size);
 
-size_t sfile_get(struct sfile *const restrict sf, const sfile_id id, void *const restrict buffer, const size_t buffer_size);
+size_t sfile_read_size(struct sfile *const restrict sf, const sfile_id id);
 
-void sfile_set(struct sfile *const restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size);
+size_t sfile_read(struct sfile *const restrict sf, const sfile_id id, void *const restrict buffer, const size_t buffer_size);
+
+void sfile_write(struct sfile *const restrict sf, const sfile_id id, void *restrict buffer, const size_t buffer_size);
+
+void *sfile_free(struct sfile *const restrict sf, const sfile_id id);
 
 #endif
