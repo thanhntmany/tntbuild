@@ -18,7 +18,6 @@ struct __attribute__((packed)) sfile_fdb_header
     char sfile_signature[sizeof(SFILE_SIGNATURE)];
     sfile_offset next_offset;
     sfile_id next_id;
-    size_t last_free; // --> backward linked list
 };
 
 struct __attribute__((packed)) sfile_fdb_segheader
@@ -29,6 +28,7 @@ struct __attribute__((packed)) sfile_fdb_segheader
 
 struct sfile
 {
+    char *db_path;
     struct pstreams
     {
         struct pstream *db;

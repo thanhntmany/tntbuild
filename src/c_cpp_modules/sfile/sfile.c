@@ -79,7 +79,6 @@ struct sfile *sfile_open(const char *restrict db_path, const size_t db_poolsize,
         memcpy(sf->header.sfile_signature, SFILE_SIGNATURE, sizeof(SFILE_SIGNATURE));
         sf->header.next_offset = sizeof(sf->header);
         sf->header.next_id = 0;
-        sf->header.last_free = 0;
         pstream_write(sf->pstreams.db, 0, &sf->header, sizeof(sf->header));
     };
 

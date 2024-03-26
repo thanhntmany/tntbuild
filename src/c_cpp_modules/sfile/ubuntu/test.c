@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h> // memcpy
 #include "sfile/sfile.h"
 
 int main()
@@ -10,11 +11,17 @@ int main()
     sfile_id id = sfile_alloc(sf, data, sizeof(data));
     printf("new id: %ld\n", id);
 
+    memcpy(data + 3, "XXXXXXX", 5);
+    sfile_write(sf, id, data, sizeof(data));
+
+    if (id > 3)
+        sfile_free(sf, id - 1);
+    printf("sfile_free size: %ld\n", sfile_read_size(sf, id - 1));
+
+    printf("sfile_read_size: %ld\n", sfile_read_size(sf, id));
     printf("sfile_read N.o bytes read: %ld\n", sfile_read(sf, id, data, sizeof(data)));
-    // printf("sfile_read N.o bytes read: %ld\n", sfile_read(sf, id, data, 6114));
     printf("sfile_read: <%s>\n", data);
 
-    sfile_flush(sf);
     sfile_close(sf);
     return 0;
 };
