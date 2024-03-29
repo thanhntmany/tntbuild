@@ -31,6 +31,9 @@ int main()
     char buff[50] = "0123456789 asdads sadhfjsa XXXXX 0123456789";
     iofp_write(fp, 4090, buff, sizeof(buff));
 
+    iofp_write(fp, 3*4090, buff, sizeof(buff));
+
+
     printf("iofp_read\n");
     iofp_read(fp, 4090, buff, sizeof(buff) - 3);
     printf("Buff: %s\n", buff);
