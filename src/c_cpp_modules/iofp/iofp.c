@@ -28,15 +28,17 @@ static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t p
 static struct iofp_page *page_at(struct iofp *const restrict fp, const off_t page_offset)
 {
     struct iofp_page *restrict page = fp->anchor_page.next;
-    if (iofp_buffofpage(page) && page->offset == page_offset) // first page
+    if (page->offset == page_offset) // first page
         return page;
-    while (iofp_buffofpage(page = page->next))
-        if (page->offset == page_offset)
+
+    while ((page = page->next)->offset != page_offset)
+        if (!iofp_buffofpage(page))
         {
-            (page->prev->next = page->next)->prev = page->prev;
+            page = load_page(fp, page_offset);
             goto ret;
         };
-    page = load_page(fp, page_offset);
+
+    (page->prev->next = page->next)->prev = page->prev;
 
 ret:
     // place page at the first page position and return it.

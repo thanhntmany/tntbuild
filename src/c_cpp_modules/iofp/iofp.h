@@ -1,5 +1,5 @@
-#ifndef SFIO_H
-#define SFIO_H
+#ifndef IOFP_H
+#define IOFP_H
 
 #include <sys/file.h> // off_t
 #include <sys/uio.h>  // iovec
@@ -19,18 +19,18 @@ struct iofp_page
 struct iofp_opt
 {
     size_t page_size; // bytes
-    size_t keep;     // bytes
+    size_t keep;      // bytes
     size_t flush;     // bytes
 };
 
 struct iofp
 {
-    struct iofp_page anchor_page;
+    struct iofp_page anchor_page; // .iofp_buffofpage is always NULL
     size_t page_size;
     size_t _page_count;
     struct iofp_threshold
     {
-        size_t keep; // quantity of pages
+        size_t keep;  // quantity of pages
         size_t flush; // quantity of pages
     } threshold;
     int fd;
