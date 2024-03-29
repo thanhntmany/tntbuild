@@ -25,26 +25,6 @@ static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t p
     return page;
 };
 
-static struct iofp_page *page_at(struct iofp *const restrict fp, const off_t page_offset)
-{
-    struct iofp_page *restrict page = fp->anchor_page.next;
-    if (page->offset == page_offset) // first page
-        return page;
-
-    while ((page = page->next)->offset != page_offset)
-        if (!iofp_buffofpage(page))
-        {
-            page = load_page(fp, page_offset);
-            goto ret;
-        };
-
-    (page->prev->next = page->next)->prev = page->prev;
-
-ret:
-    // place page at the first page position and return it.
-    return (((page->next = fp->anchor_page.next)->prev = page)->prev = &fp->anchor_page)->next = page;
-};
-
 void save_page(struct iofp *const restrict fp, struct iofp_page *const restrict page)
 {
     printf("save_page: %ld\n", page->offset);
@@ -149,9 +129,25 @@ void iofp_close(struct iofp *const restrict fp)
 
 void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struct iofp_page **found_page)
 {
-    const size_t page_size = fp->page_size;
-    const off_t p_offset = offset % page_size;
-    return p_offset + iofp_buffofpage(*found_page = page_at(fp, offset - p_offset));
+    const off_t p_offset = offset % fp->page_size,
+                page_offset = offset - p_offset;
+
+    struct iofp_page *restrict page = fp->anchor_page.next;
+    if (page->offset != page_offset) // if not first page
+    {
+        while ((page = page->next)->offset != page_offset)
+            if (!iofp_buffofpage(page))
+            {
+                page = load_page(fp, page_offset);
+                goto retpage;
+            };
+
+        (page->prev->next = page->next)->prev = page->prev;
+    retpage:
+        (((page->next = fp->anchor_page.next)->prev = page)->prev = &fp->anchor_page)->next = page; // move page to the first position
+    };
+
+    return p_offset + iofp_buffofpage(*found_page = page);
 };
 
 off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr, struct iofp_page **found_page)
