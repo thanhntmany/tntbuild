@@ -17,7 +17,8 @@ static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t p
     preadv(fp->fd, &page->iovec, 1, page->offset = page_offset); // #TODO: Error handling
     page->changed = false;
 
-    if (++fp->_page_count >= fp->threshold.flush) {
+    if (++fp->_page_count >= fp->threshold.flush)
+    {
         // #TODO:
     };
 
@@ -131,6 +132,10 @@ void iofp_flush(struct iofp *const restrict fp)
             save_page(fp, page);
         page = page->next;
     };
+};
+
+void iofp_clear(struct iofp *const restrict fp){
+    // #TODO:
 };
 
 void iofp_close(struct iofp *const restrict fp)

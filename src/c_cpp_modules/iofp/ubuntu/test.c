@@ -24,6 +24,9 @@ int main()
 
     printf("iofp_ptrtooffset: %s\n", (char *)obj);
 
+    printf("iofp_offsettoptr: %d\n", (int)iofp_offsettoptr(fp, obj, &page));
+    printf("iofp_toendofpage: %ld\n", iofp_toendofpage(fp, 4080));
+
     printf("iofp_write\n");
     char buff[50] = "0123456789 asdads sadhfjsa XXXXX 0123456789";
     iofp_write(fp, 4090, buff, sizeof(buff));
@@ -31,7 +34,6 @@ int main()
     printf("iofp_read\n");
     iofp_read(fp, 4090, buff, sizeof(buff) - 3);
     printf("Buff: %s\n", buff);
-
 
     printf("iofp_close\n");
     iofp_close(fp);
