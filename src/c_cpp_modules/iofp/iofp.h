@@ -46,7 +46,9 @@ void iofp_close(struct iofp *const restrict fp); // flush, clear, unlock, close
 void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struct iofp_page **found_page);
 off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr, struct iofp_page **found_page);
 off_t iofp_toendofpage(struct iofp *const restrict fp, const off_t offset);
+void iofp_markchanged(struct iofp *const restrict fp, void *const restrict ptr);
 
+#define iofp_toendofpage(fp, offset) (fp->page_size - (offset % fp->page_size))
 void iofp_read(struct iofp *const restrict fp, off_t offset, void *restrict buffer, size_t nbyte);
 void iofp_write(struct iofp *const restrict fp, off_t offset, void *restrict buffer, size_t nbyte);
 

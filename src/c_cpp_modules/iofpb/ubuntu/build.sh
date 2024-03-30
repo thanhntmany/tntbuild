@@ -2,11 +2,12 @@
 cd "$(dirname "$(readlink -f "$0")")"
 
 mkdir -p ./\$build/
-name=iofp
+name=iofpb
 dst=$(realpath ./\$build/$name.o)
 src=$(realpath ../$name.c)
 
 cd ../..
+bash ./iofp/ubuntu/build.sh
 
-gcc -Wall -o $dst -c $src
-gcc -Wall -o $dst.s -S $src
+gcc -Wall -I. -o $dst -c $src
+# gcc -Wall -o $dst.s -S $src

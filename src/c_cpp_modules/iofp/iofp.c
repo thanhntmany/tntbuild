@@ -6,8 +6,6 @@
 #include <string.h>   // memcpy
 #include "iofp.h"
 
-#include <stdio.h>
-
 static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t page_offset)
 {
     struct iofp_page *page = malloc(sizeof(struct iofp_page));
@@ -27,7 +25,6 @@ static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t p
 
 void save_page(struct iofp *const restrict fp, struct iofp_page *const restrict page)
 {
-    printf("save_page: %ld\n", page->offset);
     pwritev(fp->fd, &page->iovec, 1, page->offset); // #TODO: Error handling
     page->changed = false;
 };
@@ -164,10 +161,17 @@ off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr,
     return -1;
 };
 
-off_t iofp_toendofpage(struct iofp *const restrict fp, const off_t offset)
+void iofp_markchanged(struct iofp *const restrict fp, void *const restrict ptr)
 {
-    register size_t ps = fp->page_size;
-    return ps - (offset % ps);
+    const size_t page_size = fp->page_size;
+    struct iofp_page *page = &fp->anchor_page;
+    void *buff;
+    while ((buff = iofp_buffofpage(page = page->next)))
+        if (ptr >= buff && ptr - buff < page_size)
+        {
+            iofp_markpagechanged(page);
+            return;
+        };
 };
 
 void iofp_read(struct iofp *const restrict fp, off_t offset, void *restrict buffer, size_t nbyte)
