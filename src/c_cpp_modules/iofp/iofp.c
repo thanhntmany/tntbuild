@@ -147,7 +147,7 @@ void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struc
         (((page->next = fp->anchor_page.next)->prev = page)->prev = &fp->anchor_page)->next = page; // move page to the first position
     };
 
-    return p_offset + iofp_buffofpage(*found_page = page);
+    return iofp_buffofpage(*found_page = page) + p_offset;
 };
 
 off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr, struct iofp_page **found_page)
