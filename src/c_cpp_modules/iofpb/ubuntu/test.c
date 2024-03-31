@@ -11,10 +11,16 @@ int main()
     printf("Loaded:\n");
     printf("-> next_offset: %ld\n", fpb->f->next_offset);
 
-    struct iofpb_fblockh *block = iofpb_alloc(fpb, 4049);
+    struct iofpb_blockh bh;
 
     char *new = "QQQQQQQQQQQQQQQQQQQQ12345";
-    memcpy(iofpb_buffofblock(block), new, strlen(new));
+    memcpy(iofpb_alloc(fpb, strlen(new), &bh), new, strlen(new));
+    iofpb_free(&bh);
+
+
+    new = "123456789XXXXXXXX987654321";
+    memcpy(iofpb_alloc(fpb, strlen(new), &bh), new, strlen(new));
+
 
     printf("-> next_offset: %ld\n", fpb->f->next_offset);
 

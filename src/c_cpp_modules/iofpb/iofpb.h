@@ -18,6 +18,15 @@ struct __attribute__((packed)) iofpb_fblockh
 #define iofpb_buffofblock(bh) (void *)((void *)bh + sizeof(struct iofpb_fblockh))
 #define iofpb_markchanged(fpb, ptr) iofp_markchanged(fpb->fp, ptr)
 
+struct iofpb_blockh
+{
+    struct iofpb_fblockh *f;
+    off_t offset;
+    struct iofp_page *page;
+};
+#define iofpb_buffoblockh(bh) (void *)((void *)bh->f + sizeof(struct iofpb_fblockh))
+
+
 struct __attribute__((packed)) iofpb_fversion
 {
     int32_t major;
@@ -43,8 +52,8 @@ struct iofpb
 };
 
 struct iofpb *iofpb_open(const char *const restrict filename);
-struct iofpb_fblockh *iofpb_alloc(struct iofpb *const restrict fps, const size_t size);
-void iofpb_free(struct iofpb *const restrict fps, struct iofpb_fblockh *const restrict sh);
+void *iofpb_alloc(struct iofpb *const restrict fpb, const size_t size, struct iofpb_blockh *const restrict bh);
+void iofpb_free(struct iofpb_blockh *const restrict bh);
 void iofpb_close(struct iofpb *const restrict fps);
 
 #endif
