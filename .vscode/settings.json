@@ -4,6 +4,13 @@
     ],
     "files.associations": {
         "sfile.h": "c",
-        "pstream.h": "c"
+        "pstream.h": "c",
+        "fcntl.h": "c",
+        "iofp.h": "c",
+        "type_traits": "c",
+        "stdlib.h": "c",
+        "unistd.h": "c",
+        "errno.h": "c",
+        "iofpb.h": "c"
     }
 }

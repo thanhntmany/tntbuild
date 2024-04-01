@@ -40,6 +40,8 @@ void pstream_lock(struct pstream *const restrict ps);
 
 void pstream_unlock(struct pstream *const restrict ps);
 
+off_t pstream_ptr2offset(struct pstream *const restrict ps, const off_t offset, const bool setchanged);
+
 void pstream_read(struct pstream *const restrict ps, off_t offset, void *restrict buffer, size_t nbyte);
 
 void pstream_write(struct pstream *const restrict ps, off_t offset, const void *restrict buffer, size_t nbyte);

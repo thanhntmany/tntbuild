@@ -132,14 +132,15 @@ void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struc
     struct iofp_page *restrict page = fp->anchor_page.next;
     if (page->offset != page_offset) // if not first page
     {
-        while ((page = page->next)->offset != page_offset)
-            if (!iofp_buffofpage(page))
+        register off_t o;
+        while ((o = (page = page->next)->offset) != page_offset)
+            if (o < 0)
             {
                 page = load_page(fp, page_offset);
                 goto retpage;
             };
-
         (page->prev->next = page->next)->prev = page->prev;
+
     retpage:
         (((page->next = fp->anchor_page.next)->prev = page)->prev = &fp->anchor_page)->next = page; // move page to the first position
     };

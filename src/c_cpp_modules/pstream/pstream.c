@@ -161,6 +161,15 @@ void pstream_unlock(struct pstream *const restrict ps)
     fcntl(ps->filedes, F_SETLK, &ps->flock);
 };
 
+off_t pstream_ptr2offset(struct pstream *const restrict ps, const off_t offset, const bool setchanged)
+{
+    off_t off_p;
+    struct pstream_page *page = page_of_offset(ps, offset, &off_p);
+    if (setchanged)
+        page->changed = true;
+    return pstream_buff_of_page(page) + off_p;
+};
+
 void pstream_read(struct pstream *const restrict ps, off_t offset, void *restrict buffer, size_t nbyte)
 {
     off_t off_p, load, page_size = ps->page_size;

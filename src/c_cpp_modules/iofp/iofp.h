@@ -14,7 +14,7 @@ struct iofp_page
     bool changed;
 };
 #define iofp_buffofpage(page) (page)->iovec.iov_base
-#define iofp_markpagechanged(page) page->changed = true
+#define iofp_markpagechanged(page) (page)->changed = true
 
 struct iofp_opt
 {
@@ -25,7 +25,7 @@ struct iofp_opt
 
 struct iofp
 {
-    struct iofp_page anchor_page; // .iofp_buffofpage is always NULL
+    struct iofp_page anchor_page; // .iofp_buffofpage is always NULL, .offset alway < 0 (-1)
     size_t page_size;
     size_t _page_count;
     struct iofp_threshold
