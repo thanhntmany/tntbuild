@@ -18,7 +18,7 @@ struct __attribute__((packed)) iofpb_fblockh
     size_t size;
     // buffer
 };
-#define iofpb_buffofblock(bh) (void *)((void *)bh + sizeof(struct iofpb_fblockh))
+#define iofpb_buffofblock(bh) (void *)((void *)(bh) + sizeof(struct iofpb_fblockh))
 #define iofpb_markchanged(fpb, ptr) iofp_markchanged(fpb->fp, ptr)
 
 struct iofpb_blockh
@@ -48,13 +48,14 @@ struct __attribute__((packed)) iofpb_fheader
 struct iofpb
 {
     struct iofpb_fheader *f;
-    struct iofp_page *f_page;
+    struct iofp_page *f_page; // fist page, where the iofpb_fheader are placed
     struct iofp *fp;
     size_t page_size;
 };
 
 struct iofpb *iofpb_open(const char *const restrict filename);
 void *iofpb_alloc(struct iofpb *const restrict fpb, const size_t size, struct iofpb_blockh *const restrict bh);
+void *iofpb_get(struct iofpb *const restrict fpb, const off_t offset, struct iofpb_blockh *const restrict bh);
 void iofpb_free(struct iofpb_blockh *const restrict bh);
 void iofpb_close(struct iofpb *const restrict fps);
 

@@ -63,11 +63,15 @@ void *iofpb_alloc(struct iofpb *const restrict fpb, const size_t size, struct io
 
     bh->f = fbh;
     fpb->f->next_offset = (bh->offset = offset) + (fbh->used = fbh->size = req);
-    bh->page = page;
-    iofp_markpagechanged(page);
+    iofp_markpagechanged(bh->page = page);
     iofp_markpagechanged(fpb->f_page);
 
-    return (void *)fbh + sizeof(struct iofpb_fblockh);
+    return iofpb_buffofblock(fbh);
+};
+
+void *iofpb_get(struct iofpb *const restrict fpb, const off_t offset, struct iofpb_blockh *const restrict bh)
+{
+    return iofpb_buffofblock(bh->f = iofp_ptrtooffset(fpb->fp, bh->offset = offset, &bh->page));
 };
 
 void iofpb_free(struct iofpb_blockh *const restrict bh)
@@ -75,10 +79,6 @@ void iofpb_free(struct iofpb_blockh *const restrict bh)
     bh->f->used = 0;
     iofp_markpagechanged(bh->page);
 };
-
-// void iofpb_defrag(struct iofpb *const restrict fpb){
-//     // #TODO:
-// };
 
 void iofpb_close(struct iofpb *const restrict fpb)
 {
