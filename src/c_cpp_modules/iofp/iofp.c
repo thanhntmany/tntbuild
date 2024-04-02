@@ -5,6 +5,7 @@
 #include <unistd.h>   // close, SEEK_SET, sysconf, _SC_PAGESIZE, ssize_t
 #include <string.h>   // memcpy
 #include <sys/uio.h>  // iovec, preadv
+#include <malloc.h>   // memalign
 #include "iofp.h"
 
 static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t page_offset)
@@ -14,7 +15,7 @@ static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t p
 
     struct iovec iov = {
         .iov_len = page_size,
-        .iov_base = page->buff = aligned_alloc(page_size, page_size)};
+        .iov_base = page->buff = memalign(page_size, page_size)};
 
     preadv(fp->fd, &iov, 1, page->offset = page_offset); // #TODO: Error handling
     page->changed = false;

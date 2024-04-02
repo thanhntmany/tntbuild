@@ -20,7 +20,7 @@ int main()
 
     obj->a = 'X';
     obj->b = 'Y';
-    iofp_markpagechanged(page);
+    page->changed = true;
 
     printf("iofp_ptrtooffset: %s\n", (char *)obj);
 
