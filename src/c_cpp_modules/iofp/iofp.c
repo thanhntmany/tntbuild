@@ -4,40 +4,43 @@
 #include <sys/stat.h> // S_IRUSR, S_IWUSR
 #include <unistd.h>   // close, SEEK_SET, sysconf, _SC_PAGESIZE, ssize_t
 #include <string.h>   // memcpy
+#include <sys/uio.h>  // iovec, preadv
 #include "iofp.h"
 
 static struct iofp_page *load_page(struct iofp *const restrict fp, const off_t page_offset)
 {
     struct iofp_page *page = malloc(sizeof(struct iofp_page));
-    register size_t page_size = page->iovec.iov_len = fp->page_size;
-    iofp_buffofpage(page) = aligned_alloc(page_size, page_size);
+    register size_t page_size = fp->page_size;
 
-    preadv(fp->fd, &page->iovec, 1, page->offset = page_offset); // #TODO: Error handling
+    struct iovec iov = {
+        .iov_len = page_size,
+        .iov_base = page->buff = aligned_alloc(page_size, page_size)};
+
+    preadv(fp->fd, &iov, 1, page->offset = page_offset); // #TODO: Error handling
     page->changed = false;
-
-    if (++fp->_page_count >= fp->threshold.flush)
-    {
-        // #TODO:
-    };
 
     return page;
 };
 
 void save_page(struct iofp *const restrict fp, struct iofp_page *const restrict page)
 {
-    pwritev(fp->fd, &page->iovec, 1, page->offset); // #TODO: Error handling
+    struct iovec iov = {
+        .iov_len = fp->page_size,
+        .iov_base = page->buff};
+
+    pwritev(fp->fd, &iov, 1, page->offset); // #TODO: Error handling
     page->changed = false;
 };
 
 void free_page(struct iofp_page *page)
 {
-    if (!iofp_buffofpage(page))
+    if (!page->buff)
         return;
+    free(page->buff);
     if (page->prev)
         page->prev->next = page->next;
     if (page->next)
         page->next->prev = page->prev;
-    free(iofp_buffofpage(page));
     free(page);
 };
 
@@ -58,8 +61,7 @@ struct iofp *iofp_open(const char *const restrict filename)
     // Init page list
     fp->anchor_page.offset = -1;
     fp->anchor_page.next = fp->anchor_page.prev = &fp->anchor_page;
-    fp->anchor_page.iovec.iov_base = NULL;
-    fp->anchor_page.iovec.iov_len = 0;
+    fp->anchor_page.buff = NULL;
 
     // Init lock, lock write (+read)
     fp->flock = IOFP_FLOCK;
@@ -105,7 +107,7 @@ void iofp_setotp(struct iofp *const restrict fp, const struct iofp_opt *const re
 void iofp_flush(struct iofp *const restrict fp)
 {
     struct iofp_page *page = fp->anchor_page.next;
-    while (iofp_buffofpage(page))
+    while (page->buff)
     {
         if (page->changed)
             save_page(fp, page);
@@ -145,7 +147,7 @@ void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struc
         (((page->next = fp->anchor_page.next)->prev = page)->prev = &fp->anchor_page)->next = page; // move page to the first position
     };
 
-    return iofp_buffofpage(*found_page = page) + p_offset;
+    return (*found_page = page)->buff + p_offset;
 };
 
 off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr, struct iofp_page **found_page)
@@ -155,7 +157,7 @@ off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr,
     size_t _p;
     void *buff;
 
-    while ((buff = iofp_buffofpage(page = page->next)))
+    while ((buff = (page = page->next->buff)))
         if (ptr >= buff && (_p = ptr - buff) < page_size)
             return (*found_page = page)->offset + _p;
 
@@ -167,10 +169,10 @@ void iofp_markchanged(struct iofp *const restrict fp, void *const restrict ptr)
     const size_t page_size = fp->page_size;
     struct iofp_page *page = &fp->anchor_page;
     void *buff;
-    while ((buff = iofp_buffofpage(page = page->next)))
+    while ((buff = (page = page->next->buff)))
         if (ptr >= buff && ptr - buff < page_size)
         {
-            iofp_markpagechanged(page);
+            page->changed = true;
             return;
         };
 };
@@ -184,7 +186,7 @@ void iofp_read(struct iofp *const restrict fp, off_t offset, void *restrict buff
     while (nbyte)
     {
         ptr = iofp_ptrtooffset(fp, offset, &page);
-        if ((load = iofp_buffofpage(page) + page_size - ptr) > nbyte)
+        if ((load = page->buff + page_size - ptr) > nbyte)
             load = nbyte;
         memcpy(buffer, ptr, load);
         offset += load;
@@ -202,9 +204,9 @@ void iofp_write(struct iofp *const restrict fp, off_t offset, void *restrict buf
     while (nbyte)
     {
         ptr = iofp_ptrtooffset(fp, offset, &page);
-        if ((load = iofp_buffofpage(page) + page_size - ptr) > nbyte)
+        if ((load = page->buff + page_size - ptr) > nbyte)
             load = nbyte;
-        iofp_markpagechanged(page);
+        page->changed = true;
         memcpy(ptr, buffer, load);
         offset += load;
         buffer += load;

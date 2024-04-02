@@ -1,17 +1,16 @@
 #!/bin/bash
+cd "$(dirname "$(readlink -f "$0")")"
 
-. ./build.sh
-obj=$dst
+bash ./build.sh
 
 mkdir -p ./\$test/
-
 dst=$(realpath ./\$test/test)
 src=$(realpath ./test.c)
+obj=$(realpath ./\$build/iofp.o)
 
 pushd ../.. > /dev/null 2>&1
 gcc -o $dst -I. $src $obj
 popd > /dev/null 2>&1
 
-pushd ./\$test/ > /dev/null 2>&1
+cd ./\$test/
 time $dst
-popd > /dev/null 2>&1

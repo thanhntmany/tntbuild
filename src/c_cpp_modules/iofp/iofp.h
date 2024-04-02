@@ -2,19 +2,16 @@
 #define IOFP_H
 
 #include <sys/file.h> // off_t
-#include <sys/uio.h>  // iovec
 #include <stdbool.h>  // bool
 
 struct iofp_page
 {
-    struct iovec iovec;
+    void *buff; /* Pointer to data.  */
     struct iofp_page *prev;
     struct iofp_page *next;
     off_t offset;
     bool changed;
 };
-#define iofp_buffofpage(page) (page)->iovec.iov_base
-#define iofp_markpagechanged(page) (page)->changed = true
 
 struct iofp_opt
 {
