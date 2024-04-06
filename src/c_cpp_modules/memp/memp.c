@@ -8,6 +8,31 @@
 #include <malloc.h>   // memalign
 #include "memp.h"
 
+/**************************************
+ * page
+ */
+
+static struct memp_page *page_init(struct memp *const restrict mp, const off_t page_offset)
+{
+    struct memp_page *page = malloc(sizeof(struct memp_page));
+    register size_t page_size = mp->page_size;
+    page->offset = page_offset;
+    page->buff = memalign(page_size, page_size);
+
+    return page;
+};
+
+static void page_clear(struct memp *const restrict mp, struct memp_page *page)
+{
+    memset(page->buff, 0, mp->page_size);
+};
+
+static void page_free(struct memp_page *page)
+{
+    free(page->buff);
+    free(page);
+};
+
 /******************************************************************************
  *
  * Main functions
@@ -50,7 +75,7 @@ void memp_clear(struct memp *const restrict mp)
 {
     struct memp_page *page = &mp->anchor_page;
     while ((page = page->next)->buff)
-        free_page(page);
+        page_free(page);
 };
 
 void memp_close(struct memp *const restrict mp)
@@ -69,7 +94,8 @@ void *memp_locate(struct memp *const restrict mp, const off_t offset, struct mem
         while ((o = (page = page->next)->offset) != page_offset)
             if (o < 0)
             {
-                page = load_page(mp, page_offset);
+                page = page_init(mp, page_offset);
+                page_clear(mp, page);
                 goto retpage;
             };
         (page->prev->next = page->next)->prev = page->prev;
@@ -97,6 +123,7 @@ off_t memp_locate_ptr(struct memp *const restrict mp, void *const restrict ptr, 
             return (*found_page = page)->offset + _p;
         };
 
+    *found_page = NULL;
     return -1;
 };
 
