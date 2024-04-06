@@ -6,10 +6,10 @@
 
 struct iofp_page
 {
+    off_t offset;
     void *buff; /* Pointer to data.  */
     struct iofp_page *prev;
     struct iofp_page *next;
-    off_t offset;
     bool changed;
 };
 

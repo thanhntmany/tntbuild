@@ -1,5 +1,5 @@
 #include <errno.h>    // errno
-#include <fcntl.h>    // open, F_WRLCK, F_UNLCK, F_SETLK
+#include <fcntl.h>    // open, F_WRLCK, , F_SETLK
 #include <stdlib.h>   // malloc, free
 #include <sys/stat.h> // S_IRUSR, S_IWUSR
 #include <unistd.h>   // close, SEEK_SET, sysconf, _SC_PAGESIZE, ssize_t
@@ -35,8 +35,6 @@ void save_page(struct iofp *const restrict fp, struct iofp_page *const restrict 
 
 void free_page(struct iofp_page *page)
 {
-    if (!page->buff)
-        return;
     free(page->buff);
     if (page->prev)
         page->prev->next = page->next;
@@ -116,13 +114,24 @@ void iofp_flush(struct iofp *const restrict fp)
     };
 };
 
-void iofp_clear(struct iofp *const restrict fp){
-    // #TODO:
+void iofp_clear(struct iofp *const restrict fp)
+{
+    struct iofp_page *page = fp->anchor_page.next;
+    while (page->buff)
+    {
+        if (!page->changed)
+            free_page(page);
+        page = page->next;
+    };
 };
 
 void iofp_close(struct iofp *const restrict fp)
 {
     iofp_flush(fp);
+    iofp_clear(fp);
+
+    fp->flock.l_type = F_UNLCK;
+    fcntl(fp->fd, F_SETLKW, &fp->flock);
     close(fp->fd);
     free(fp);
 };

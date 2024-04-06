@@ -1,76 +1,6 @@
 #ifndef STRBUF_H
 #define STRBUF_H
 
-/*
- * NOTE FOR STRBUF DEVELOPERS
- *
- * strbuf is a low-level primitive; as such it should interact only
- * with other low-level primitives. Do not introduce new functions
- * which interact with higher-level APIs.
- */
-
-struct string_list;
-
-/**
- * strbufs are meant to be used with all the usual C string and memory
- * APIs. Given that the length of the buffer is known, it's often better to
- * use the mem* functions than a str* one (e.g., memchr vs. strchr).
- * Though, one has to be careful about the fact that str* functions often
- * stop on NULs and that strbufs may have embedded NULs.
- *
- * A strbuf is NUL terminated for convenience, but no function in the
- * strbuf API actually relies on the string being free of NULs.
- *
- * strbufs have some invariants that are very important to keep in mind:
- *
- *  - The `buf` member is never NULL, so it can be used in any usual C
- *    string operations safely. strbufs _have_ to be initialized either by
- *    `strbuf_init()` or by `= STRBUF_INIT` before the invariants, though.
- *
- *    Do *not* assume anything on what `buf` really is (e.g. if it is
- *    allocated memory or not), use `strbuf_detach()` to unwrap a memory
- *    buffer from its strbuf shell in a safe way. That is the sole supported
- *    way. This will give you a malloced buffer that you can later `free()`.
- *
- *    However, it is totally safe to modify anything in the string pointed by
- *    the `buf` member, between the indices `0` and `len-1` (inclusive).
- *
- *  - The `buf` member is a byte array that has at least `len + 1` bytes
- *    allocated. The extra byte is used to store a `'\0'`, allowing the
- *    `buf` member to be a valid C-string. All strbuf functions ensure this
- *    invariant is preserved.
- *
- *    NOTE: It is OK to "play" with the buffer directly if you work it this
- *    way:
- *
- *        strbuf_grow(sb, SOME_SIZE); <1>
- *        strbuf_setlen(sb, sb->len + SOME_OTHER_SIZE);
- *
- *    <1> Here, the memory array starting at `sb->buf`, and of length
- *    `strbuf_avail(sb)` is all yours, and you can be sure that
- *    `strbuf_avail(sb)` is at least `SOME_SIZE`.
- *
- *    NOTE: `SOME_OTHER_SIZE` must be smaller or equal to `strbuf_avail(sb)`.
- *
- *    Doing so is safe, though if it has to be done in many places, adding the
- *    missing API to the strbuf module is the way to go.
- *
- *    WARNING: Do _not_ assume that the area that is yours is of size `alloc
- *    - 1` even if it's true in the current implementation. Alloc is somehow a
- *    "private" member that should not be messed with. Use `strbuf_avail()`
- *    instead.
-*/
-
-/**
- * Data Structures
- * ---------------
- */
-
-/**
- * This is the string buffer structure. The `len` member can be used to
- * determine the current length of the string, and `buf` member provides
- * access to the string itself.
- */
 struct strbuf {
 	size_t alloc;
 	size_t len;
@@ -82,85 +12,12 @@ extern char strbuf_slopbuf[];
 
 struct object_id;
 
-/**
- * Life Cycle Functions
- * --------------------
- */
-
-/**
- * Initialize the structure. The second parameter can be zero or a bigger
- * number to allocate memory, in case you want to prevent further reallocs.
- */
 void strbuf_init(struct strbuf *sb, size_t alloc);
-
-/**
- * Release a string buffer and the memory it used. After this call, the
- * strbuf points to an empty string that does not need to be free()ed, as
- * if it had been set to `STRBUF_INIT` and never modified.
- *
- * To clear a strbuf in preparation for further use without the overhead
- * of free()ing and malloc()ing again, use strbuf_reset() instead.
- */
 void strbuf_release(struct strbuf *sb);
-
-/**
- * Detach the string from the strbuf and returns it; you now own the
- * storage the string occupies and it is your responsibility from then on
- * to release it with `free(3)` when you are done with it.
- *
- * The strbuf that previously held the string is reset to `STRBUF_INIT` so
- * it can be reused after calling this function.
- */
 char *strbuf_detach(struct strbuf *sb, size_t *sz);
-
-/**
- * Attach a string to a buffer. You should specify the string to attach,
- * the current length of the string and the amount of allocated memory.
- * The amount must be larger than the string length, because the string you
- * pass is supposed to be a NUL-terminated string.  This string _must_ be
- * malloc()ed, and after attaching, the pointer cannot be relied upon
- * anymore, and neither be free()d directly.
- */
 void strbuf_attach(struct strbuf *sb, void *str, size_t len, size_t mem);
 
-/**
- * Swap the contents of two string buffers.
- */
-static inline void strbuf_swap(struct strbuf *a, struct strbuf *b)
-{
-	SWAP(*a, *b);
-}
-
-
-/**
- * Functions related to the size of the buffer
- * -------------------------------------------
- */
-
-/**
- * Determine the amount of allocated but unused memory.
- */
-static inline size_t strbuf_avail(const struct strbuf *sb)
-{
-	return sb->alloc ? sb->alloc - sb->len - 1 : 0;
-}
-
-/**
- * Ensure that at least this amount of unused memory is available after
- * `len`. This is used when you know a typical size for what you will add
- * and want to avoid repetitive automatic resizing of the underlying buffer.
- * This is never a needed operation, but can be critical for performance in
- * some cases.
- */
 void strbuf_grow(struct strbuf *sb, size_t amount);
-
-/**
- * Set the length of the buffer to a given value. This function does *not*
- * allocate new memory, so you should not perform a `strbuf_setlen()` to a
- * length that is larger than `len + strbuf_avail()`. `strbuf_setlen()` is
- * just meant as a 'please fix invariants from this strbuf I just messed
- * with'.
- */
 static inline void strbuf_setlen(struct strbuf *sb, size_t len)
 {
 	if (len > (sb->alloc ? sb->alloc - 1 : 0))
@@ -171,64 +28,18 @@ static inline void strbuf_setlen(struct strbuf *sb, size_t len)
 	else
 		assert(!strbuf_slopbuf[0]);
 }
-
-/**
- * Empty the buffer by setting the size of it to zero.
- */
 #define strbuf_reset(sb)  strbuf_setlen(sb, 0)
 
-
-/**
- * Functions related to the contents of the buffer
- * -----------------------------------------------
- */
-
-/**
- * Strip whitespace from the beginning (`ltrim`), end (`rtrim`), or both side
- * (`trim`) of a string.
- */
 void strbuf_trim(struct strbuf *sb);
 void strbuf_rtrim(struct strbuf *sb);
 void strbuf_ltrim(struct strbuf *sb);
 
-/* Strip trailing directory separators */
 void strbuf_trim_trailing_dir_sep(struct strbuf *sb);
-
-/* Strip trailing LF or CR/LF */
 void strbuf_trim_trailing_newline(struct strbuf *sb);
 
-/**
- * Replace the contents of the strbuf with a reencoded form.  Returns -1
- * on error, 0 on success.
- */
-int strbuf_reencode(struct strbuf *sb, const char *from, const char *to);
 
-/**
- * Lowercase each character in the buffer using `tolower`.
- */
 void strbuf_tolower(struct strbuf *sb);
-
-/**
- * Compare two buffers. Returns an integer less than, equal to, or greater
- * than zero if the first buffer is found, respectively, to be less than,
- * to match, or be greater than the second buffer.
- */
 int strbuf_cmp(const struct strbuf *first, const struct strbuf *second);
-
-
-/**
- * Adding data to the buffer
- * -------------------------
- *
- * NOTE: All of the functions in this section will grow the buffer as
- * necessary.  If they fail for some reason other than memory shortage and the
- * buffer hadn't been allocated before (i.e. the `struct strbuf` was set to
- * `STRBUF_INIT`), then they will free() it.
- */
-
-/**
- * Add a single character to the buffer.
- */
 static inline void strbuf_addch(struct strbuf *sb, int c)
 {
 	if (!strbuf_avail(sb))
@@ -236,124 +47,35 @@ static inline void strbuf_addch(struct strbuf *sb, int c)
 	sb->buf[sb->len++] = c;
 	sb->buf[sb->len] = '\0';
 }
-
-/**
- * Add a character the specified number of times to the buffer.
- */
 void strbuf_addchars(struct strbuf *sb, int c, size_t n);
-
-/**
- * Insert data to the given position of the buffer. The remaining contents
- * will be shifted, not overwritten.
- */
 void strbuf_insert(struct strbuf *sb, size_t pos, const void *, size_t);
-
-/**
- * Insert a NUL-terminated string to the given position of the buffer.
- * The remaining contents will be shifted, not overwritten.  It's an
- * inline function to allow the compiler to resolve strlen() calls on
- * constants at compile time.
- */
 static inline void strbuf_insertstr(struct strbuf *sb, size_t pos,
 				    const char *s)
 {
 	strbuf_insert(sb, pos, s, strlen(s));
 }
-
-/**
- * Insert data to the given position of the buffer giving a printf format
- * string. The contents will be shifted, not overwritten.
- */
 void strbuf_vinsertf(struct strbuf *sb, size_t pos, const char *fmt,
 		     va_list ap);
-
 __attribute__((format (printf, 3, 4)))
 void strbuf_insertf(struct strbuf *sb, size_t pos, const char *fmt, ...);
-
-/**
- * Remove given amount of data from a given position of the buffer.
- */
 void strbuf_remove(struct strbuf *sb, size_t pos, size_t len);
-
-/**
- * Remove the bytes between `pos..pos+len` and replace it with the given
- * data.
- */
 void strbuf_splice(struct strbuf *sb, size_t pos, size_t len,
 		   const void *data, size_t data_len);
-
-/**
- * Add a NUL-terminated string to the buffer. Each line will be prepended
- * by a comment character and a blank.
- */
 void strbuf_add_commented_lines(struct strbuf *out,
 				const char *buf, size_t size,
 				char comment_line_char);
-
-
-/**
- * Add data of given length to the buffer.
- */
 void strbuf_add(struct strbuf *sb, const void *data, size_t len);
-
-/**
- * Add a NUL-terminated string to the buffer.
- *
- * NOTE: This function will *always* be implemented as an inline or a macro
- * using strlen, meaning that this is efficient to write things like:
- *
- *     strbuf_addstr(sb, "immediate string");
- *
- */
 static inline void strbuf_addstr(struct strbuf *sb, const char *s)
 {
 	strbuf_add(sb, s, strlen(s));
 }
-
-/**
- * Copy the contents of another buffer at the end of the current one.
- */
 void strbuf_addbuf(struct strbuf *sb, const struct strbuf *sb2);
-
-/**
- * Join the arguments into a buffer. `delim` is put between every
- * two arguments.
- */
 const char *strbuf_join_argv(struct strbuf *buf, int argc,
 			     const char **argv, char delim);
-
-/**
- * Used with `strbuf_expand_step` to expand the literals %n and %x
- * followed by two hexadecimal digits. Returns the number of recognized
- * characters.
- */
 size_t strbuf_expand_literal(struct strbuf *sb, const char *placeholder);
-
-/**
- * If the string pointed to by `formatp` contains a percent sign ("%"),
- * advance it to point to the character following the next one and
- * return 1, otherwise return 0.  Append the substring before that
- * percent sign to `sb`, or the whole string if there is none.
- */
 int strbuf_expand_step(struct strbuf *sb, const char **formatp);
-
-/**
- * Append the contents of one strbuf to another, quoting any
- * percent signs ("%") into double-percents ("%%") in the
- * destination. This is useful for literal data to be fed to either
- * strbuf_expand or to the *printf family of functions.
- */
 void strbuf_addbuf_percentquote(struct strbuf *dst, const struct strbuf *src);
-
 #define STRBUF_ENCODE_SLASH 1
-
-/**
- * Append the contents of a string to a strbuf, percent-encoding any characters
- * that are needed to be encoded for a URL.
- *
- * If STRBUF_ENCODE_SLASH is set in flags, percent-encode slashes.  Otherwise,
- * slashes are not percent-encoded.
- */
 void strbuf_add_percentencode(struct strbuf *dst, const char *src, int flags);
 
 /**

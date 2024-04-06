@@ -11,6 +11,10 @@
         "stdlib.h": "c",
         "unistd.h": "c",
         "errno.h": "c",
-        "iofpb.h": "c"
+        "iofpb.h": "c",
+        "iofpbi.h": "c",
+        "iofps.h": "c",
+        "uio.h": "c",
+        "malloc.h": "c"
     }
 }
