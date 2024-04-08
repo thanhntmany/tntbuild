@@ -13,39 +13,39 @@ struct iofp_page
     bool changed;
 };
 
+struct iofp_io
+{
+    const char *filepath;
+    int fd;
+    struct flock flock;
+    size_t block_size;
+};
+
 struct iofp_opt
 {
-    size_t page_size; // bytes
-    size_t keep;      // bytes
-    size_t flush;     // bytes
+    size_t page_size;       // bytes
+    size_t flush_threshold; // bytes
 };
 
 struct iofp
 {
-    struct iofp_page anchor_page; // .iofp_buffofpage is always NULL, .offset alway < 0 (-1)
-    size_t page_size;
-    size_t _page_count;
-    struct iofp_threshold
-    {
-        size_t keep;  // quantity of pages
-        size_t flush; // quantity of pages
-    } threshold;
-    int fd;
-    struct flock flock;
+    struct iofp_page anchor; // .iofp_buffofpage is always NULL, .offset alway < 0 (-1)
+    size_t count;
+    size_t page_size;       // bytes
+    size_t flush_threshold; // quantity of pages
+
+    struct iofp_io io;
 };
 
-struct iofp *iofp_open(const char *const restrict filename); // open, lock
+
+struct iofp *iofp_open(const char *const restrict filename);
 void iofp_setotp(struct iofp *const restrict fp, const struct iofp_opt *const restrict otp);
-void iofp_flush(struct iofp *const restrict fp); // flush changed pages
-void iofp_clear(struct iofp *const restrict fp); // free unchanged pages
-void iofp_close(struct iofp *const restrict fp); // flush, clear, unlock, close
+void iofp_flush(struct iofp *const restrict fp);
+void iofp_clear(struct iofp *const restrict fp);
+void iofp_close(struct iofp *const restrict fp);
 
-void *iofp_ptrtooffset(struct iofp *const restrict fp, const off_t offset, struct iofp_page **found_page);
+void *iofp_locate(struct iofp *const restrict fp, const off_t offset, struct iofp_page **found_page);
 off_t iofp_offsettoptr(struct iofp *const restrict fp, void *const restrict ptr, struct iofp_page **found_page);
-off_t iofp_toendofpage(struct iofp *const restrict fp, const off_t offset);
-void iofp_markchanged(struct iofp *const restrict fp, void *const restrict ptr);
-
-#define iofp_toendofpage(fp, offset) (fp->page_size - (offset % fp->page_size))
 void iofp_read(struct iofp *const restrict fp, off_t offset, void *restrict buffer, size_t nbyte);
 void iofp_write(struct iofp *const restrict fp, off_t offset, void *restrict buffer, size_t nbyte);
 
