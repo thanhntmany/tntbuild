@@ -18,7 +18,7 @@ static void io_init(struct iofp_io *const restrict io, const char *const restric
 {
     size_t path_size = strlen(filepath);
     io->filepath = malloc(path_size + 1);
-    memcpy(io->filepath, filepath, path_size + 1);
+    memcpy((void *restrict)io->filepath, filepath, path_size + 1);
 
     // Init lock, lock write (+read)
     io->fd = open(filepath, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -37,7 +37,7 @@ static void io_close(struct iofp_io *const restrict io)
     io->flock.l_type = F_UNLCK;
     fcntl(io->fd, F_SETLKW, &io->flock);
 
-    free(io->filepath);
+    free((void *restrict)io->filepath);
     close(io->fd);
 };
 
@@ -192,6 +192,7 @@ void *iofp_locate(struct iofp *const restrict fp, const off_t offset, struct iof
 
                 page->offset = page_offset;
                 iofp_load_page(fp, page);
+                break;
             };
 
         (page->prev->next = page->next)->prev = page->prev;                       // detach
