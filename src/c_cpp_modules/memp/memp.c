@@ -18,6 +18,7 @@ static struct memp_page *page_init(struct memp *const restrict mp, const off_t p
     register size_t page_size = mp->page_size;
     page->offset = page_offset;
     page->buff = memalign(page_size, page_size);
+    page->nref = 0;
 
     return page;
 };
@@ -43,9 +44,9 @@ struct memp *memp_open()
 {
     struct memp *const restrict mp = malloc(sizeof(struct memp));
 
-    mp->anchor_page.offset = -1;
-    mp->anchor_page.next = mp->anchor_page.prev = &mp->anchor_page;
-    mp->anchor_page.buff = NULL;
+    mp->anchor.offset = -1;
+    mp->anchor.next = mp->anchor.prev = &mp->anchor;
+    mp->anchor.buff = NULL;
 
     memp_setotp(mp, &PMEM_DEFAULT_OPT);
 
@@ -71,9 +72,15 @@ void memp_setotp(struct memp *const restrict mp, const struct memp_opt *const re
     };
 };
 
+void memp_free_page(struct memp *const restrict mp, struct memp_page *page)
+{
+    (page->prev->next = page->next)->prev = page->prev;
+    page_free(page);
+};
+
 void memp_clear(struct memp *const restrict mp)
 {
-    struct memp_page *page = &mp->anchor_page;
+    struct memp_page *page = &mp->anchor;
     while ((page = page->next)->buff)
         page_free(page);
 };
@@ -87,7 +94,7 @@ void memp_close(struct memp *const restrict mp)
 void *memp_locate(struct memp *const restrict mp, const off_t offset, struct memp_page **found_page)
 {
     const off_t p_offset = offset % mp->page_size, page_offset = offset - p_offset;
-    struct memp_page *restrict page = mp->anchor_page.next;
+    struct memp_page *restrict page = mp->anchor.next;
     if (page->offset != page_offset) // if not first page
     {
         register off_t o;
@@ -101,7 +108,7 @@ void *memp_locate(struct memp *const restrict mp, const off_t offset, struct mem
         (page->prev->next = page->next)->prev = page->prev;
 
     retpage:
-        (((page->next = mp->anchor_page.next)->prev = page)->prev = &mp->anchor_page)->next = page; // move page to the first position
+        (((page->next = mp->anchor.next)->prev = page)->prev = &mp->anchor)->next = page; // move page to the first position
     };
     *found_page = page;
     return p_offset;
@@ -110,7 +117,7 @@ void *memp_locate(struct memp *const restrict mp, const off_t offset, struct mem
 off_t memp_locate_ptr(struct memp *const restrict mp, void *const restrict ptr, struct memp_page **found_page)
 {
     const size_t page_size = mp->page_size;
-    struct memp_page *page = &mp->anchor_page;
+    struct memp_page *page = &mp->anchor;
     size_t _p;
     void *buff;
 
@@ -119,7 +126,7 @@ off_t memp_locate_ptr(struct memp *const restrict mp, void *const restrict ptr, 
         {
             // move page to the first position
             (page->prev->next = page->next)->prev = page->prev;
-            (((page->next = mp->anchor_page.next)->prev = page)->prev = &mp->anchor_page)->next = page;
+            (((page->next = mp->anchor.next)->prev = page)->prev = &mp->anchor)->next = page;
             return (*found_page = page)->offset + _p;
         };
 

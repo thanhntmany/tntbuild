@@ -4,107 +4,63 @@
 #include <fcntl.h>   // flock, off_t
 #include <stdbool.h> // bool
 #include <stdint.h>  // uint8_t, int64_t
+#include "sbuf/sbuf.h"
+#include "iofp/iofp.h"
+#include "memp/memp.h"
 
 /**************************************
- * segbuf
+ * sdb: segments management
  */
 
-struct __attribute__((packed)) sbuf_header
+typedef off_t sbufio_sdb_offset;
+
+struct sbufio_sdb
 {
-    off_t size; // `size` is always increased, never decreased.
-    off_t used; // `used` always < `size`
-    // char buffer[size]
+    struct iofp *fp;
+    sbufio_sdb_offset tail;
+    size_t sumoffree;
 };
 
-struct sbuf
+/**************************************
+ * idx: indexing management
+ */
+
+typedef off_t sbufio_idx_id;
+
+struct sbufio_idx
 {
-    struct sbuf_header h;
-    void *buf;
-    off_t id;
+    struct iofp *fp;
+    sbufio_idx_id la; // lowest available id
 };
 
 /**************************************
  * segbufIO
  */
 
-/* sbufio_idx */
-
-struct sbufio_idx_page
+#define SFILE_SIGNATURE "tnt/sbufio:0.0.1"
+struct __attribute__((packed)) sbufio_metadata
 {
-    off_t offset;
-    struct sbufio_idx_page *next;
-    struct sbufio_idx_page *prev;
-    off_t *buf; // off_t *buf;
-    bool changed;
-    void *sbs; // struct sbuf **sbs;
-    size_t nref;
+    char signature[sizeof(SFILE_SIGNATURE)];
+    sbufio_sdb_offset sdb_tail;
+    size_t sdb_sumoffree;
+    sbufio_idx_id idx_la;
 };
 
-/**
- * NOTE: id 0 is used for storing Lowest Available ID.
- */
-struct __attribute__((packed)) sbufio_idx_id0
-{
-    off_t _tail_id; // Lowest Available ID
-};
-
-struct sbufio_idx
-{
-    struct sbufio_idx_page anchor_page;
-    int fd;
-    size_t _page_size;
-    struct flock flock;
-    struct sbufio_idx_id0 *i0;
-};
-
-/* sbufio_db */
-
-struct sbufio_db_page
-{
-    off_t offset;
-    struct sbufio_db_page *next;
-    struct sbufio_db_page *prev;
-    off_t *buf;
-    // size_t nref;
-    bool changed;
-};
-
-/* sbufio_db_sbuf */
-
-/**
- * NOTE: First bytes in file is used for storing Lowest Available ID.
- */
-struct __attribute__((packed)) sbufio_sb0
-{
-    struct sbuf_header h;
-    char signature[10]; // #TODO:
-    off_t next_offset;
-};
-
-struct sbufio_db
-{
-    struct sbufio_db_page anchor_page;
-    int fd;
-    size_t _page_size;
-    struct flock flock;
-    struct sbufio_sb0 *sb0;
-};
-
-/* sbufio */
+typedef struct sbuf **sbufio_idm_value;
 
 struct sbufio
 {
-    struct sbufio_idx *idx;
-    struct sbufio_db *db;
-    /* data */
+    struct memp *idm;
+    struct sbufio_idx idx;
+    struct sbufio_sdb sdb;
+    struct sbufio_metadata meta;
 };
 
-// struct sbuf *sbuf_alloc(const size_t size, const size_t ex);
-// void sbuf_free(struct sbuf *sb);
+struct sbufio *sbufio_open(const char *const restrict filename);
+void sbufio_flush(struct sbufio *const restrict sbio);
+void sbufio_close(struct sbufio *const restrict sbio);
 
-// struct sbufio *sbufio_open(const char *const filename);
-// void sbufio_close(struct sbufio *sbio);
-// off_t sbufio_set(struct sbufio *const sbio, const off_t id, struct sbuf *const sb);
-// struct sbuf *sbufio_get(struct sbufio *const sbio, const off_t id);
+sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, const struct sbuf *const restrict new_sb);
+struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_idx_id id);
 
 #endif

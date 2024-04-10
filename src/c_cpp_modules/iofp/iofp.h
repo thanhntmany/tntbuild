@@ -3,6 +3,7 @@
 
 #include <sys/file.h> // off_t
 #include <stdbool.h>  // bool
+#include <stddef.h>   // size_t
 
 struct iofp_page
 {
@@ -36,7 +37,6 @@ struct iofp
 
     struct iofp_io io;
 };
-
 
 struct iofp *iofp_open(const char *const restrict filename);
 void iofp_setotp(struct iofp *const restrict fp, const struct iofp_opt *const restrict otp);
