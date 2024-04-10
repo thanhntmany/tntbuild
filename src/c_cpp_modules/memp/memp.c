@@ -110,8 +110,7 @@ void *memp_locate(struct memp *const restrict mp, const off_t offset, struct mem
     retpage:
         (((page->next = mp->anchor.next)->prev = page)->prev = &mp->anchor)->next = page; // move page to the first position
     };
-    *found_page = page;
-    return p_offset;
+    return (*found_page = page)->buff + p_offset;
 };
 
 off_t memp_locate_ptr(struct memp *const restrict mp, void *const restrict ptr, struct memp_page **found_page)

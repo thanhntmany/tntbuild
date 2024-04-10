@@ -2,7 +2,7 @@
 #include <string.h> // memcmp, memcpy
 #include "sbuf/sbuf.h"
 
-static struct sbuf *sbuf_init()
+struct sbuf *sbuf_init()
 {
     struct sbuf *sb = malloc(sizeof(struct sbuf));
     sb->h.alloc = sb->h.size = 0;
@@ -30,7 +30,8 @@ void sbuf_free(struct sbuf *const restrict sb)
     free(sb);
 };
 
-void sbuf_realloc(struct sbuf *const restrict sb, size_t alloc)
+/* Require the alloc size. Realloc if needed. */
+void sbuf_reqalloc(struct sbuf *const restrict sb, size_t alloc)
 {
     // alloc = --alloc - (alloc % sizeof(size_t)) + sizeof(size_t);
     if (alloc > sb->h.alloc)
@@ -44,13 +45,9 @@ void sbuf_realloc(struct sbuf *const restrict sb, size_t alloc)
     };
 };
 
-void *sbuf_detach(struct sbuf *const restrict sb){
-    
-};
-
 void sbuf_push(struct sbuf *const restrict sb, void *buf, const size_t size)
 {
-    sbuf_realloc(sb, sb->h.size + size);
+    sbuf_reqalloc(sb, sb->h.size + size);
     memcpy(sb->buf + sb->h.size, buf, size);
 };
 
@@ -69,4 +66,28 @@ void sbuf_trim(struct sbuf *const restrict sb, const size_t size)
 {
     if ((sb->h.size -= size) < 0)
         sb->h.size = 0;
+};
+
+struct sbuf *sbuf_from_str(const char *str)
+{
+    size_t len = strlen(str) + 1;
+    struct sbuf *sb = sbuf_alloc(len);
+    memcpy(sb->buf, str, len);
+    sb->h.size = len - 1;
+    return sb;
+};
+
+char *sbuf_as_str(struct sbuf *const restrict sb)
+{
+    sbuf_reqalloc(sb, sb->h.size + 1);
+    *(char *)(sb->buf + sb->h.size) = '\0';
+    return sb->buf;
+};
+
+struct sbuf *sbuf_dup(struct sbuf *const restrict sb)
+{
+    struct sbuf *_sb = sbuf_alloc(sb->h.alloc);
+    memcpy(_sb->buf, sb->buf, _sb->h.size = sb->h.size);
+    _sb->independence = true;
+    return _sb;
 };

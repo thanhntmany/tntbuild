@@ -1,6 +1,6 @@
 #include <stdlib.h> // malloc
 #include <string.h> // memcmp, memcpy
-#include "sbufio.h"
+#include "sbufio/sbufio.h"
 
 /**************************************
  * sdb: segments management
@@ -9,7 +9,7 @@
 static sbufio_sdb_offset sdb_alloc(struct sbufio_sdb *const restrict sdb, struct sbuf *const restrict sb)
 {
     const off_t offset = sdb->tail;
-    sdb->tail += sb->h.alloc;
+    sdb->tail += sizeof(sb->h) + sb->h.alloc;
 
     iofp_write(sdb->fp, offset, &sb->h, sizeof(sb->h));
     iofp_write(sdb->fp, offset + sizeof(sb->h), sb->buf, sb->h.size);
@@ -25,7 +25,7 @@ static struct sbuf *sdb_get(struct sbufio_sdb *sdb, const off_t offset)
     {
         struct sbuf *sb = sbuf_init();
         sb->h = h;
-        iofp_read(sdb, offset + sizeof(sb->h), sb->buf = malloc(sb->h.alloc), sb->h.size);
+        iofp_read(sdb->fp, offset + sizeof(sb->h), sb->buf = malloc(sb->h.alloc), sb->h.size);
         return sb;
     };
 
@@ -37,7 +37,7 @@ static sbufio_sdb_offset sdb_set(struct sbufio_sdb *const restrict sdb, const of
     struct sbuf_header h;
     iofp_read(sdb->fp, offset, &h, sizeof(h));
     if (h.alloc < sb->h.size)
-        return NULL;
+        return 0;
 
     h.size = sb->h.size;
     iofp_write(sdb->fp, offset, &h, sizeof(h));
@@ -76,7 +76,7 @@ static void idx_free(struct sbufio *const restrict sbio, sbufio_idx_id id)
     if (sdb_offset)
     {
         sdb_free(&sbio->sdb, sdb_offset);
-        *id_p = NULL;
+        *id_p = 0;
         page->changed = true;
     };
 
@@ -92,13 +92,13 @@ static void idx_update(struct sbufio *const restrict sbio, const sbufio_idx_id i
     *id_p = sdb_offset ? sdb_update(&sbio->sdb, sdb_offset, sb) : sdb_alloc(&sbio->sdb, sb);
     if (*id_p != id)
         page->changed = true;
-
-    return *id_p;
 };
 
 /**************************************
  * Main functions
  */
+
+static char _SFILE_SIGNATURE[] = SFILE_SIGNATURE;
 
 static struct sbuf _IDM_EMPTY;
 static struct sbuf *IDM_EMPTY = &_IDM_EMPTY;
@@ -109,7 +109,6 @@ struct sbufio *sbufio_open(const char *const restrict filename)
 {
     // Init handler
     struct sbufio *const restrict sbio = malloc(sizeof(struct sbufio));
-
     size_t f_len = strlen(filename);
     char *idx_f = alloca(f_len + sizeof(IDX_SUFFIX) + 1);
     memcpy(idx_f, filename, f_len);
@@ -121,10 +120,11 @@ struct sbufio *sbufio_open(const char *const restrict filename)
     sbio->sdb.fp = iofp_open(filename);
 
     struct sbufio_metadata *meta = &sbio->meta;
-    iofp_read(sbio->sdb.fp, 0, &meta, sizeof(meta));
-    if (memcmp(meta->signature, SFILE_SIGNATURE, sizeof(SFILE_SIGNATURE)))
+    iofp_read(sbio->sdb.fp, 0, meta, sizeof(*meta));
+
+    if (memcmp(&meta->signature, _SFILE_SIGNATURE, sizeof(SFILE_SIGNATURE)))
     {
-        memcpy(&meta->signature, SFILE_SIGNATURE, sizeof(SFILE_SIGNATURE));
+        memcpy(&meta->signature, _SFILE_SIGNATURE, sizeof(SFILE_SIGNATURE));
         meta->sdb_tail = sizeof(meta);
         meta->sdb_sumoffree = 0;
         meta->idx_la = 0;
@@ -148,14 +148,14 @@ void sbufio_flush(struct sbufio *const restrict sbio)
     void *buff;
     struct sbuf *sb, **sb_p;
 
-    while (buff = page->buff)
+    while ((buff = page->buff))
     {
         page_offset = page->offset;
         p_offset = 0;
         nref = page->nref;
         while (nref > 0 && p_offset < page_size)
         {
-            if (sb = *(sb_p = buff + p_offset))
+            if ((sb = *(sb_p = buff + p_offset)))
             {
                 id = (page_offset + p_offset) / sizeof(sbufio_idm_value);
                 if (sb == IDM_EMPTY)
@@ -183,7 +183,7 @@ void sbufio_flush(struct sbufio *const restrict sbio)
     meta->idx_la = sbio->idx.la;
     meta->sdb_tail = sbio->sdb.tail;
     meta->sdb_sumoffree = sbio->sdb.sumoffree;
-    iofp_write(sbio->sdb.fp, 0, &meta, sizeof(meta));
+    iofp_write(sbio->sdb.fp, 0, meta, sizeof(*meta));
 
     iofp_flush(sbio->idx.fp);
     iofp_flush(sbio->sdb.fp);
@@ -210,9 +210,9 @@ static sbufio_idx_id sbufio_available_id(struct sbufio *const restrict sbio)
 
     sbufio_idx_id id = sbio->idx.la;
 loop:
-    if (sb = *(struct sbuf **)memp_locate(idm, id * sizeof(sbufio_idm_value), &idm_page))
+    if ((sb = *(struct sbuf **)memp_locate(idm, id * sizeof(sbufio_idm_value), &idm_page)))
     {
-        if (sb == IDM_EMPTY)
+        if ((sb == IDM_EMPTY))
             goto ret;
     }
     else if (!*(sbufio_sdb_offset *)iofp_locate(idx_fp, id * sizeof(sbufio_sdb_offset), &idx_page))
@@ -223,20 +223,25 @@ ret:
     return sbio->idx.la = id;
 };
 
-sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, const struct sbuf *const restrict new_sb)
+sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, struct sbuf *restrict new_sb)
 {
+
     if (id <= 0)
         id = sbufio_available_id(sbio);
 
-    struct memp_page *idm_page;
-    struct sbuf **sb_p = memp_locate(sbio->idm, id * sizeof(sbufio_idm_value), &idm_page);
+    struct memp_page *page;
+    struct sbuf **sb_p = memp_locate(sbio->idm, id * sizeof(sbufio_idm_value), &page);
+
     if (!*sb_p)
-        ++idm_page->nref;
+        ++page->nref;
 
     if (new_sb)
     {
+        if (!new_sb->independence)
+            new_sb = sbuf_dup(new_sb);
         *sb_p = new_sb;
-        if (id = sbio->idx.la)
+        new_sb->independence = false;
+        if (id == sbio->idx.la)
             sbio->idx.la = id + 1;
     }
     else
@@ -251,9 +256,12 @@ sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, c
 
 struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_idx_id id)
 {
+    if (id < 0)
+        return NULL;
     struct memp_page *idm_page;
     struct sbuf **sb_p = memp_locate(sbio->idm, id * sizeof(sbufio_idm_value), &idm_page);
     struct sbuf *sb = *sb_p;
+
     if (!sb)
     {
         struct iofp_page *idx_page;

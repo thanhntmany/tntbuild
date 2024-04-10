@@ -60,7 +60,7 @@ struct sbufio *sbufio_open(const char *const restrict filename);
 void sbufio_flush(struct sbufio *const restrict sbio);
 void sbufio_close(struct sbufio *const restrict sbio);
 
-sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, const struct sbuf *const restrict new_sb);
+sbufio_idx_id sbufio_set(struct sbufio *const restrict sbio, sbufio_idx_id id, struct sbuf *const restrict new_sb);
 struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_idx_id id);
 
 #endif
