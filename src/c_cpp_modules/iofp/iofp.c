@@ -117,7 +117,7 @@ void iofp_setotp(struct iofp *const restrict fp, const struct iofp_opt *const re
 
     // threshold.flush
     ps <<= 1;
-    fp->flush_threshold = (otp->flush_threshold < ps ? ps : otp->flush_threshold) / ps;
+    fp->flush_threshold = (otp->flush_threshold < ps ? ps : otp->flush_threshold) / fp->page_size;
 };
 
 #define iofp_load_page(fp, page) io_read_page(&(fp)->io, (page)->offset, (page)->buff, (fp)->page_size)
