@@ -141,7 +141,7 @@ void sbufio_flush(struct sbufio *const restrict sbio)
 {
     struct memp *idm = sbio->idm;
     size_t page_size = idm->page_size;
-    struct memp_page *page = idm->anchor.next, *page_next;
+    struct memp_page *page = idm->anchor.next;
     int nref;
     off_t page_offset, p_offset;
     sbufio_idx_id id;
@@ -173,9 +173,7 @@ void sbufio_flush(struct sbufio *const restrict sbio)
             };
             p_offset += sizeof(struct sbuf **);
         };
-        page_next = page->next;
-        memp_store_page(idm, page);
-        page = page_next;
+        memp_store_page(idm, (page = page->next)->prev);
     };
 
     // Store metadata

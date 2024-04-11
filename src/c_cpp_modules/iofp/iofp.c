@@ -138,13 +138,9 @@ void iofp_flush(struct iofp *const restrict fp)
 
 void iofp_clear(struct iofp *const restrict fp)
 {
-    struct iofp_page *page = &fp->anchor;
-    struct iofp_page *page_next = page->next;
-    while ((page = page_next)->buff)
-    {
-        page_next = page->next;
-        page_free(page);
-    };
+    struct iofp_page *page = fp->anchor.next;
+    while (page->buff)
+        page_free((page = page->next)->prev);
     fp->count = 0;
 };
 
