@@ -151,7 +151,7 @@ void iofp_clear(struct iofp *const restrict fp)
 void iofp_close(struct iofp *const restrict fp)
 {
     iofp_flush(fp);
-
+    iofp_clear(fp);
     io_close(&fp->io);
     free(fp);
 };
