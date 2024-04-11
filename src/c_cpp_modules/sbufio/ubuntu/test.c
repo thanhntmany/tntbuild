@@ -13,12 +13,16 @@ int main()
     sbufio_idx_id id = sbufio_set(sbio, -1, sb1);
     printf("Set as id: %ld\n", id);
     printf("sbufio_get(sbio, id): %p\n", sbufio_get(sbio, id));
+    if (sbufio_get(sbio, id))
+        printf("text: [%s]\n", sbuf_as_str(sbufio_get(sbio, id)));
 
     if (id > 2)
     {
         id = sbufio_set(sbio, id - 2, sb1);
         printf("Set as id: %ld\n", id);
         printf("sbufio_get(sbio, id): %p\n", sbufio_get(sbio, id));
+        if (sbufio_get(sbio, id))
+            printf("text: [%s]\n", sbuf_as_str(sbufio_get(sbio, id)));
     }
 
     printf("sbufio_close\n");
