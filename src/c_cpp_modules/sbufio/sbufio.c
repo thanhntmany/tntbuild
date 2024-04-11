@@ -187,6 +187,11 @@ void sbufio_flush(struct sbufio *const restrict sbio)
     iofp_flush(sbio->sdb.fp);
 };
 
+void sbufio_defrag(struct sbufio *const restrict sbio)
+{
+    // #TODO:
+};
+
 void sbufio_close(struct sbufio *const restrict sbio)
 {
     sbufio_flush(sbio);
