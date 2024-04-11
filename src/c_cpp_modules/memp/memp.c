@@ -12,20 +12,30 @@
  * page
  */
 
-static struct memp_page *page_init(struct memp *const restrict mp, const off_t page_offset)
+static struct memp_page *memp_generate_page(struct memp *const restrict mp, const off_t page_offset)
 {
-    struct memp_page *page = malloc(sizeof(struct memp_page));
-    register size_t page_size = mp->page_size;
+    struct memp_page *page = mp->anchor_r.next;
+    if (page->buff)
+    {
+        (page->prev->next = page->next)->prev = page->prev;
+    }
+    else
+    {
+        page = malloc(sizeof(struct memp_page));
+        register size_t page_size = mp->page_size;
+        page->buff = memalign(page_size, page_size);
+        page->nref = 0;
+    };
+    memset(page->buff, 0, mp->page_size);
     page->offset = page_offset;
-    page->buff = memalign(page_size, page_size);
-    page->nref = 0;
 
     return page;
 };
 
-static void page_clear(struct memp *const restrict mp, struct memp_page *page)
+void memp_store_page(struct memp *const restrict mp, struct memp_page *page)
 {
-    memset(page->buff, 0, mp->page_size);
+    (page->prev->next = page->next)->prev = page->prev;
+    (((page->next = mp->anchor_r.next)->prev = page)->prev = &mp->anchor_r)->next = page;
 };
 
 static void page_free(struct memp_page *page)
@@ -47,6 +57,10 @@ struct memp *memp_open()
     mp->anchor.offset = -1;
     mp->anchor.next = mp->anchor.prev = &mp->anchor;
     mp->anchor.buff = NULL;
+
+    mp->anchor_r.offset = -1;
+    mp->anchor_r.next = mp->anchor_r.prev = &mp->anchor_r;
+    mp->anchor_r.buff = NULL;
 
     memp_setotp(mp, &PMEM_DEFAULT_OPT);
 
@@ -72,15 +86,13 @@ void memp_setotp(struct memp *const restrict mp, const struct memp_opt *const re
     };
 };
 
-void memp_free_page(struct memp *const restrict mp, struct memp_page *page)
-{
-    (page->prev->next = page->next)->prev = page->prev;
-    page_free(page);
-};
-
 void memp_clear(struct memp *const restrict mp)
 {
     struct memp_page *page = &mp->anchor;
+    while ((page = page->next)->buff)
+        page_free(page);
+
+    page = &mp->anchor_r;
     while ((page = page->next)->buff)
         page_free(page);
 };
@@ -101,8 +113,7 @@ void *memp_locate(struct memp *const restrict mp, const off_t offset, struct mem
         while ((o = (page = page->next)->offset) != page_offset)
             if (o < 0)
             {
-                page = page_init(mp, page_offset);
-                page_clear(mp, page);
+                page = memp_generate_page(mp, page_offset);
                 goto retpage;
             };
         (page->prev->next = page->next)->prev = page->prev;

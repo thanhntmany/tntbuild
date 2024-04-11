@@ -174,7 +174,7 @@ void sbufio_flush(struct sbufio *const restrict sbio)
             p_offset += sizeof(struct sbuf **);
         };
         page_next = page->next;
-        memp_free_page(idm, page);
+        memp_store_page(idm, page);
         page = page_next;
     };
 
