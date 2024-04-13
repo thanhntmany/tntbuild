@@ -10,7 +10,7 @@ int main()
 
     struct sbufio *sbio = sbufio_open("./sbiodata.db");
 
-    sbufio_idx_id id = sbufio_set(sbio, -1, sb1);
+    sbufio_id id = sbufio_set(sbio, -1, sb1);
     printf("Set as id: %ld\n", id);
     printf("sbufio_get(sbio, id): %p\n", sbufio_get(sbio, id));
     if (sbufio_get(sbio, id))

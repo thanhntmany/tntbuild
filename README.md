@@ -2,9 +2,8 @@
 tntbuild
 
 ## Design philosophy
-    - Building script should be stored into command-lines.
-    - Add comment-lines as indicators then this tool will filter out the necessary segments, sort, run for you.
-    - Deverloper should focous on their main languages.
+
+- ...
 
 ## Tags:
 

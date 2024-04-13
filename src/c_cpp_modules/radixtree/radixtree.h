@@ -1,7 +1,7 @@
 #ifndef TNT_DB_PTREE_H
 #define TNT_DB_PTREE_H
 
-#include "sfile/sfile.h"
+#include "sbufio/sbufio.h"
 
 /*
  * Use prefix tree struct to treat paths segment.
@@ -50,12 +50,12 @@
 
 struct __attribute__((packed)) radixtree_node
 {
-    sfile_id parent;
-    sfile_id first_child;
-    sfile_id prev;
-    sfile_id next;
-    sfile_id value;
-    char token[3 * sizeof(sfile_id)];
+    sbufio_id parent;
+    sbufio_id first_child;
+    sbufio_id prev;
+    sbufio_id next;
+    sbufio_id value;
+    char token[3 * sizeof(sbufio_id)];
 };
 
 struct radixtree_walker
