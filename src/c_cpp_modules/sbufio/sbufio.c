@@ -72,7 +72,7 @@ static void idx_free(struct sbufio *const restrict sbio, sbufio_id id)
 {
     struct iofp_page *page;
     sbufio_offset *id_p = iofp_locate(sbio->idx.fp, id * sizeof(sbufio_offset), &page),
-                      sdb_offset = *id_p;
+                  sdb_offset = *id_p;
     if (sdb_offset)
     {
         sdb_free(&sbio->sdb, sdb_offset);
@@ -88,7 +88,7 @@ static void idx_update(struct sbufio *const restrict sbio, const sbufio_id id, s
 {
     struct iofp_page *page;
     sbufio_offset *id_p = iofp_locate(sbio->idx.fp, id * sizeof(sbufio_offset), &page),
-                      sdb_offset = *id_p;
+                  sdb_offset = *id_p;
     *id_p = sdb_offset ? sdb_update(&sbio->sdb, sdb_offset, sb) : sdb_alloc(&sbio->sdb, sb);
     if (*id_p != id)
         page->changed = true;
@@ -165,7 +165,6 @@ void sbufio_flush(struct sbufio *const restrict sbio)
                 else
                 {
                     idx_update(sbio, id, sb);
-                    sb->independence = true;
                     sbuf_free(sb);
                 };
                 *sb_p = NULL;
@@ -187,8 +186,7 @@ void sbufio_flush(struct sbufio *const restrict sbio)
     iofp_flush(sbio->sdb.fp);
 };
 
-void sbufio_defrag(struct sbufio *const restrict sbio)
-{
+void sbufio_defrag(struct sbufio *const restrict sbio){
     // #TODO:
 };
 
@@ -228,7 +226,6 @@ ret:
 
 sbufio_id sbufio_set(struct sbufio *const restrict sbio, sbufio_id id, struct sbuf *restrict new_sb)
 {
-
     if (id <= 0)
         id = sbufio_available_id(sbio);
 
@@ -236,14 +233,15 @@ sbufio_id sbufio_set(struct sbufio *const restrict sbio, sbufio_id id, struct sb
     struct sbuf **sb_p = memp_locate(sbio->idm, id * sizeof(sbufio_idm_value), &page);
 
     if (!*sb_p)
+    {
         ++page->nref;
+    }
+    else if (*sb_p != IDM_EMPTY)
+        sbuf_free(*sb_p);
 
     if (new_sb)
     {
-        if (!new_sb->independence)
-            new_sb = sbuf_dup(new_sb);
-        *sb_p = new_sb;
-        new_sb->independence = false;
+        *sb_p = sbuf_dup(new_sb);
         if (id == sbio->idx.la)
             sbio->idx.la = id + 1;
     }
@@ -270,10 +268,7 @@ struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_id id)
         struct iofp_page *idx_page;
         sbufio_offset sdb_offset = *(sbufio_offset *)iofp_locate(sbio->idx.fp, id * sizeof(sbufio_offset), &idx_page);
         if (sdb_offset)
-        {
             sb = sdb_get(&sbio->sdb, sdb_offset);
-            sb->independence = false;
-        };
 
         *sb_p = sb = sb ? sb : IDM_EMPTY;
         ++idm_page->nref;

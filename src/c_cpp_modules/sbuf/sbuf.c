@@ -7,7 +7,6 @@ struct sbuf *sbuf_init()
     struct sbuf *sb = malloc(sizeof(struct sbuf));
     sb->h.alloc = sb->h.size = 0;
     sb->buf = NULL;
-    sb->independence = true;
     return sb;
 };
 
@@ -23,8 +22,6 @@ struct sbuf *sbuf_alloc(size_t alloc)
 
 void sbuf_free(struct sbuf *const restrict sb)
 {
-    if (!sb || !sb->independence)
-        return;
     if (sb->buf)
         free(sb->buf);
     free(sb);
@@ -88,6 +85,5 @@ struct sbuf *sbuf_dup(struct sbuf *const restrict sb)
 {
     struct sbuf *_sb = sbuf_alloc(sb->h.alloc);
     memcpy(_sb->buf, sb->buf, _sb->h.size = sb->h.size);
-    _sb->independence = true;
     return _sb;
 };

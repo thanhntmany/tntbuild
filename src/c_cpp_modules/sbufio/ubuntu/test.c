@@ -9,6 +9,9 @@ int main()
     printf("sb1: %s\n", sbuf_as_str(sb1));
 
     struct sbufio *sbio = sbufio_open("./sbiodata.db");
+    // struct sbuf *sb = sbufio_get(sbio, id));
+    // sbufio_set(sbio, id, sb);
+    // sbufio_close(sbio);
 
     sbufio_id id = sbufio_set(sbio, -1, sb1);
     printf("Set as id: %ld\n", id);
@@ -23,7 +26,7 @@ int main()
         printf("sbufio_get(sbio, id): %p\n", sbufio_get(sbio, id));
         if (sbufio_get(sbio, id))
             printf("text: [%s]\n", sbuf_as_str(sbufio_get(sbio, id)));
-    }
+    };
 
     printf("sbufio_close\n");
     sbufio_close(sbio);

@@ -19,7 +19,6 @@ struct sbuf
 {
     struct sbuf_header h;
     void *buf;
-    bool independence;
 };
 
 struct sbuf *sbuf_init();
