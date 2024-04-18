@@ -62,5 +62,7 @@ void sbufio_close(struct sbufio *const restrict sbio);
 
 sbufio_id sbufio_set(struct sbufio *const restrict sbio, sbufio_id id, struct sbuf *const restrict new_sb);
 struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_id id);
+sbufio_id sbufio_id_of(struct sbufio *const restrict sbio, struct sbuf *restrict sb);
+sbufio_id sbufio_free(struct sbufio *const restrict sbio, struct sbuf *restrict sb);
 
 #endif

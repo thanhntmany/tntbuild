@@ -276,3 +276,26 @@ struct sbuf *sbufio_get(struct sbufio *const restrict sbio, const sbufio_id id)
 
     return sb == IDM_EMPTY ? NULL : sb;
 };
+
+sbufio_id sbufio_id_of(struct sbufio *const restrict sbio, struct sbuf *restrict sb)
+{
+    struct memp_page *page;
+
+    off_t offset = memp_locate_ptr(sbio->idm, sb, &page);
+    if (offset < 0)
+        return -1;
+    return offset / sizeof(sbufio_idm_value);
+};
+
+sbufio_id sbufio_free(struct sbufio *const restrict sbio, struct sbuf *restrict sb)
+{
+    sbufio_id id = sbufio_id_of(sbio, sb);
+    if (id < 0)
+    {
+        sbuf_free(sb);
+    }
+    else
+        sbufio_set(sbio, id, NULL);
+
+    return id;
+};

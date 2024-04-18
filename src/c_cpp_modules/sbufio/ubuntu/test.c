@@ -28,6 +28,8 @@ int main()
             printf("text: [%s]\n", sbuf_as_str(sbufio_get(sbio, id)));
     };
 
+    sbufio_free(sbio, sb1);
+
     printf("sbufio_close\n");
     sbufio_close(sbio);
 
