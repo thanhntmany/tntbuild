@@ -131,7 +131,7 @@ off_t memp_locate_ptr(struct memp *const restrict mp, void *const restrict ptr, 
     size_t _p;
     void *buff;
 
-    while ((buff = (page = page->next->buff)))
+    while ((buff = (page = page->next)->buff))
         if (ptr >= buff && (_p = ptr - buff) < page_size)
         {
             // move page to the first position
